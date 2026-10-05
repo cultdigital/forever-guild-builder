@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>&lt;Good Job&gt; · Raid Roster</title>
+  <meta name="description" content="Pick your main, race, spec and alternates for our WoW: Forever Horde raid team — and see the guild's role and class makeup.">
+  <meta property="og:title" content="&lt;Good Job&gt; · Horde Raid Roster">
+  <meta property="og:description" content="Pick your main and alternates. See tank/healer/DPS splits and class gaps.">
+  <meta name="theme-color" content="#5c0f0c">
+  <link rel="icon" href="/icons/inv_bannerpvp_01.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Marcellus&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="banner">
+    <div class="banner-inner">
+      <div class="crest"><img src="/icons/inv_bannerpvp_01.webp" alt=""></div>
+      <div class="titles">
+        <p class="eyebrow">World of Warcraft: Forever · Horde</p>
+        <h1 id="guild-name" class="guild-tag">&lt;Good Job&gt;</h1>
+        <p class="sub" id="headline-stats">Gathering the warband…</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <a href="#signup" role="tab" data-tab="signup">Sign Up</a>
+      <a href="#comp" role="tab" data-tab="comp">Composition</a>
+      <a href="#roster" role="tab" data-tab="roster">Roster</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- SIGN UP -->
+    <section id="tab-signup" class="tab-panel" hidden>
+      <form id="signup-form" class="panel form" autocomplete="off" novalidate>
+        <div class="form-head">
+          <h2 id="form-title" hidden></h2>
+        </div>
+
+        <div class="field">
+          <label for="f-name" class="label">Character name</label>
+          <input id="f-name" name="name" maxlength="24" placeholder="e.g. Thrallmar" required>
+        </div>
+
+        <fieldset class="block main-block">
+          <legend><span class="step">1</span> Main — your ideal pick</legend>
+
+          <div class="label">Class</div>
+          <div id="main-class" class="tile-grid classes" role="radiogroup" aria-label="Main class"></div>
+
+          <div id="main-spec-wrap" hidden>
+            <div class="label">Spec</div>
+            <div id="main-spec" class="tile-row" role="radiogroup" aria-label="Main spec"></div>
+          </div>
+
+          <div id="main-race-wrap" hidden>
+            <div class="label">Race <span class="muted" id="race-note"></span></div>
+            <div id="main-race" class="tile-row" role="radiogroup" aria-label="Race"></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="block">
+          <legend><span class="step">2</span> Alternates <span class="muted">— up to 3, best first</span></legend>
+          <p class="hint">Would you swap to fill a gap? Mark how keen you are so officers know who to ask first.</p>
+          <div id="alts"></div>
+          <button type="button" id="add-alt" class="btn ghost">+ Add an alternate</button>
+        </fieldset>
+
+        <fieldset class="block">
+          <legend><span class="step">3</span> Professions <span class="muted">— optional</span></legend>
+          <div id="form-profs" class="form-profs"></div>
+        </fieldset>
+
+        <fieldset class="block">
+          <legend><span class="step">4</span> Notes <span class="muted">— optional</span></legend>
+          <textarea id="f-notes" maxlength="200" rows="2" placeholder="Raid times, off-spec gear, 'can tank in a pinch'…"></textarea>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary" id="submit-btn">Sign up</button>
+          <button type="button" class="btn ghost" id="cancel-edit" hidden>Cancel edit</button>
+          <button type="button" class="btn danger" id="delete-btn" hidden>Remove entry</button>
+          <p id="form-msg" class="form-msg" role="status"></p>
+        </div>
+      </form>
+    </section>
+
+    <!-- COMPOSITION -->
+    <section id="tab-comp" class="tab-panel" hidden>
+      <div class="comp-toolbar">
+        <span class="label inline">Plan for</span>
+        <div class="seg" id="raid-size" role="radiogroup" aria-label="Raid size"></div>
+      </div>
+
+      <div class="role-cards" id="role-cards"></div>
+
+      <div class="panel raid-panel">
+        <div class="panel-head">
+          <h2>Tank assignments</h2>
+          <span class="muted small-note">Use the pencil on a nameplate to set Main Tank, Off Tank or Flex</span>
+        </div>
+        <div id="tank-frames" class="frames"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Role split</h2>
+        <div id="role-bar" class="stack-bar"></div>
+        <div id="role-legend" class="legend"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Gaps &amp; pressure points</h2>
+        <ul id="insights" class="insights"></ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Class &amp; spec makeup</h2>
+          <div class="legend small">
+            <span><i class="pip main"></i>Main</span>
+            <span><i class="pip keen"></i>Keen alt</span>
+            <span><i class="pip happy"></i>Happy alt</span>
+            <span><i class="pip ifneeded"></i>If needed</span>
+          </div>
+        </div>
+        <div id="class-grid" class="class-grid"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>Raid utility</h2>
+          <ul id="utility" class="utility"></ul>
+        </div>
+        <div class="panel">
+          <h2>Races</h2>
+          <div id="races" class="race-bars"></div>
+        </div>
+      </div>
+    
+      <div class="panel">
+        <h2>Professions</h2>
+        <div id="professions" class="prof-grid"></div>
+      </div>
+    </section>
+
+    <!-- ROSTER -->
+    <section id="tab-roster" class="tab-panel" hidden>
+      <div class="panel roster-panel">
+        <div class="roster-toolbar">
+          <input id="search" type="search" placeholder="Search names…" aria-label="Search names">
+          <div class="seg" id="role-filter"></div>
+          <div id="class-filter" class="class-filter"></div>
+          <button class="btn ghost small" id="export-csv" type="button">Export CSV</button>
+        </div>
+        <div id="raid-frames"></div>
+        <p id="roster-empty" class="empty" hidden>No one matches those filters.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span id="storage-note"></span>
+  </footer>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+  <div id="editpop" class="editpop" role="dialog" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+.data/
+.claude/
+node_modules/
+.env*
