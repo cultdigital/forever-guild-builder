@@ -47,7 +47,24 @@ function field(form, id, labelText, props) {
   l.htmlFor = id;
   const i = el('input');
   Object.assign(i, { id, autocomplete: 'off', ...props });
-  form.append(l, i);
+  if (i.type === 'password') {
+    i.spellcheck = false;
+    i.autocapitalize = 'none';
+    i.setAttribute('autocorrect', 'off');
+    const row = el('div', 'key-input-row');
+    const toggle = btn('Show key', 'small ghost', () => {
+      const showing = i.type === 'password';
+      i.type = showing ? 'text' : 'password';
+      toggle.textContent = showing ? 'Hide key' : 'Show key';
+      toggle.setAttribute('aria-pressed', String(showing));
+    });
+    toggle.setAttribute('aria-controls', id);
+    toggle.setAttribute('aria-pressed', 'false');
+    row.append(i, toggle);
+    form.append(l, row);
+  } else {
+    form.append(l, i);
+  }
   return i;
 }
 function msgLine() {

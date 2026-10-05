@@ -13,6 +13,9 @@
 .shell-bar { display: flex; gap: 8px; justify-content: flex-end; max-width: 1200px; margin: 0 auto; padding: 10px 16px 0; }
 .shell-foot { padding-top: 24px; }
 .shell-foot a { color: var(--gold); }
+.key-input-row { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.key-input-row input { flex: 1; min-width: 0; }
+form .key-input-row .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; }
 @media (max-width: 680px) { .shell-root { padding-top: 24px; } .shell-root .btn { justify-self: stretch; text-align: center; } }
 @media (prefers-reduced-motion: reduce) { .shell-skel { animation: none; } }
 .shell-root .panel + .panel { margin-top: 18px; }

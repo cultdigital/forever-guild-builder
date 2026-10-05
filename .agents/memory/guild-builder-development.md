@@ -34,3 +34,11 @@ Good Job is the designated admin test guild.
 **How to apply:** Keep its existing migrated entry available; do not recreate it
 or treat it as a disposable fixture during automated cleanup. Never store its
 key or recovery code in documentation or memory.
+
+Guild-key inputs must allow users to view what they entered.
+
+**Why:** The user requested a visible input or an optional input viewer.
+
+**How to apply:** Keep Show/Hide key controls available at login and wherever
+the app asks for the current guild key. Mask by default without changing or
+persisting the input value when visibility is toggled.
