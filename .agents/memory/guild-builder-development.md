@@ -105,6 +105,15 @@ Alliance theme.
 **How to apply:** Keep identity and faction presentation tied to current guild
 metadata, including after changes; do not leave Horde branding on Alliance guilds.
 
+Use the Blizzard WoW forums and Battle.net as UX and styling references for familiarity.
+
+**Why:** The user explicitly requested borrowing familiar UX from
+https://us.forums.blizzard.com/en/wow/ and https://battle.net.
+
+**How to apply:** Carry that familiarity across guild entry, roster, planning
+and Settings while preserving guild/faction identity and the app's existing
+behavior. Adapt the styling rather than adding official Blizzard branding.
+
 Keep guild navigation inside the banner: the guild name and faction crest link
 to home, with Logout in the banner and no separate Home button above it.
 
