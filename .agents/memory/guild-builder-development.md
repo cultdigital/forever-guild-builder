@@ -61,6 +61,15 @@ Everything under `/g/` must be non-indexable.
 and any future pages or resources added under `/g/`; keep public pages outside
 that section separate.
 
+Keep guild support only as the bottom-of-page link; do not show a donation banner
+after login.
+
+**Why:** The user explicitly requested removing the logged-in donation banner
+while retaining the footer link.
+
+**How to apply:** Do not reintroduce donation prompts based on roster size or
+login state.
+
 Do not infer application indexing rules from preview-domain robots headers alone.
 
 **Why:** Preview-domain responses contained extra site-wide `noindex` directives,

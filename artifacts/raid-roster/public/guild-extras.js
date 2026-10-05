@@ -1,4 +1,4 @@
-// Presentation helpers: privacy page, landing demo, donation prompt.
+// Presentation helpers: privacy page and landing demo.
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -81,36 +81,3 @@ export function demoPanel() {
   return p;
 }
 
-// Shown only when roster has more than 20 members and the server pref is not dismissed.
-export function updateDonation(rosterRoot, detail, patchGuild) {
-  const old = rosterRoot.querySelector('.donate-prompt');
-  if (old) old.remove();
-  const guild = detail && detail.guild;
-  if (!guild || !(detail.count > 20) || guild.donationDismissed) return;
-  const box = el('aside', 'donate-prompt');
-  box.append(el('p', null, 'Your guild has grown past twenty members. If Forever Guild Builder helps, you can support it. Nothing is locked either way.'));
-  const row = el('div', 'donate-row');
-  const give = el('a', 'btn small primary', 'Support on Ko-fi');
-  give.href = 'https://ko-fi.com/cultdigital';
-  give.target = '_blank';
-  give.rel = 'noopener noreferrer';
-  const dismiss = el('button', 'btn small ghost', 'Dismiss');
-  dismiss.type = 'button';
-  const err = el('span', 'form-msg error');
-  err.setAttribute('role', 'alert');
-  dismiss.onclick = async () => {
-    dismiss.disabled = true;
-    err.textContent = '';
-    try {
-      await patchGuild({ donationDismissed: true });
-      box.remove();
-    } catch (e) {
-      err.textContent = e.message;
-      dismiss.disabled = false;
-    }
-  };
-  row.append(give, dismiss, err);
-  box.append(row);
-  const banner = rosterRoot.querySelector('.banner');
-  if (banner) banner.after(box);
-}

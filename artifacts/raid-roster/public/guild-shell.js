@@ -1,4 +1,4 @@
-import { privacyPage, demoPanel, updateDonation } from '/guild-extras.js';
+import { privacyPage, demoPanel } from '/guild-extras.js';
 const root = document.getElementById('shell-root');
 const rosterRoot = document.getElementById('roster-root');
 const bar = document.getElementById('shell-bar');
@@ -436,7 +436,6 @@ async function roster(guild) {
   if (header) header.before(bar);
   if (!appLoaded) {
     appLoaded = true;
-    document.addEventListener('guild-roster-loaded', (e) => updateDonation(rosterRoot, e.detail, (d) => send('PATCH', '/api/guild', d)));
     await import('/assets/app.js');
   }
 }

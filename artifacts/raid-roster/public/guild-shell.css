@@ -42,9 +42,5 @@ form .key-input-row .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; }
 .shell-root .prose h2 { margin-top: 20px; }
 .shell-root .demo { pointer-events: none; user-select: none; }
 .shell-root .demo .frames { grid-template-columns: 1fr; }
-.donate-prompt { max-width: 1200px; margin: 12px auto 0; padding: 12px 16px; border: 1px solid var(--gold-dim); border-radius: var(--radius); background: rgba(0, 0, 0, 0.3); }
-.donate-prompt p { margin: 0 0 8px; }
-.donate-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.donate-row .btn { text-decoration: none; }
 .shell-foot { flex-wrap: wrap; align-items: center; }
 .shell-foot a { color: var(--gold); }
