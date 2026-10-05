@@ -8,3 +8,14 @@ When the testing callback reports `Unknown config kind: testing`, perform equiva
 **Why:** The testing skill was available during this import, but its specialized subagent kind was not registered in the runtime. Screenshots alone cannot verify signup, edits, export, and deletion.
 
 **How to apply:** Try the documented testing callback first when required. If it is unavailable, run browser tests through the shared proxy, clean up only test-created entries, and do not claim a testing subagent passed.
+
+Check session-cookie policy at the direct application boundary as well as in
+the proxied development browser.
+
+**Why:** The direct guild server issued HttpOnly, Secure, SameSite=Lax cookies,
+but the shared development preview presented the same session as SameSite=None.
+The proxy observation alone incorrectly suggested the app violated its policy.
+
+**How to apply:** Inspect flags without printing cookie values. Preserve the
+application's intended cookie policy; do not weaken it merely to match the
+development proxy's behavior.
