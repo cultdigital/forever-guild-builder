@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Good Job · Raid Roster"
+description = "A World of Warcraft: Forever Horde guild roster for choosing mains and alternates, reviewing raid composition, and managing member assignments."
+version = "1.0.0"
+id = "artifacts/raid-roster"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25471
+
+[services.development]
+run = "pnpm --filter @workspace/raid-roster run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/raid-roster", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/raid-roster/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25471"
+BASE_PATH = "/"

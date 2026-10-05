@@ -1,0 +1,10 @@
+{
+  "name": "@workspace/roster",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./data": "./src/data.js",
+    "./server": "./src/handler.js"
+  }
+}

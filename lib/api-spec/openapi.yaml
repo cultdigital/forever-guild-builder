@@ -11,6 +11,78 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /roster:
+    get:
+      operationId: getRoster
+      summary: Read the guild roster
+      responses:
+        "200":
+          description: Members and storage status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [members, storage]
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RosterMember"
+                  storage:
+                    type: string
+                    enum: [local, redis, missing]
+    post:
+      operationId: saveRosterMember
+      summary: Sign up or partially edit a member when id is supplied
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RosterInput"
+      responses:
+        "200":
+          description: Saved member
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [member]
+                properties:
+                  member:
+                    $ref: "#/components/schemas/RosterMember"
+        "400":
+          description: Invalid character or profession choices
+        "404":
+          description: Member was removed
+        "409":
+          description: Duplicate name
+        "503":
+          description: Published storage is not connected
+    delete:
+      operationId: deleteRosterMember
+      summary: Remove a member
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+        "404":
+          description: Member was already removed
+        "503":
+          description: Published storage is not connected
   /healthz:
     get:
       operationId: healthCheck
@@ -26,6 +98,38 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    RosterCharacter:
+      type: object
+      properties:
+        class: { type: string }
+        spec: { type: [string, "null"] }
+        race: { type: [string, "null"] }
+        will: { type: string }
+    RosterInput:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        main:
+          $ref: "#/components/schemas/RosterCharacter"
+        alts:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/RosterCharacter"
+        professions:
+          type: array
+          items: { type: string }
+        notes: { type: string, maxLength: 200 }
+        assignment: { type: [string, "null"] }
+    RosterMember:
+      allOf:
+        - $ref: "#/components/schemas/RosterInput"
+        - type: object
+          required: [id, name, main, alts]
+          properties:
+            createdAt: { type: string }
+            updatedAt: { type: string }
     HealthStatus:
       type: object
       properties:

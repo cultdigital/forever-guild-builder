@@ -1,0 +1,1 @@
+- [Browser testing fallback](browser-testing.md) — if the testing subagent kind is unavailable, use workspace Playwright rather than skipping interaction checks.
