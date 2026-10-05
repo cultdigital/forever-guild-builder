@@ -19,3 +19,12 @@ The proxy observation alone incorrectly suggested the app violated its policy.
 **How to apply:** Inspect flags without printing cookie values. Preserve the
 application's intended cookie policy; do not weaken it merely to match the
 development proxy's behavior.
+
+Run workspace Playwright through the workspace shell, not child processes
+spawned inside the CodeExecution impure sandbox.
+
+**Why:** That sandbox did not provide a usable Node executable through
+`process.execPath` or its command search path; the workspace shell did.
+
+**How to apply:** Use the normal shell tool or its documented callback for
+workspace browser scripts, keeping credentials out of script files and output.
