@@ -53,6 +53,23 @@ function btn(text, cls, onclick, type) {
   if (onclick) b.onclick = onclick;
   return b;
 }
+function factionRadios(name, selected, onChange) {
+  const group = el('fieldset', 'faction-radios');
+  group.append(el('legend', 'label', 'Faction'));
+  const choices = el('div', 'faction-options');
+  [['horde', 'Horde'], ['alliance', 'Alliance']].forEach(([value, text]) => {
+    const label = el('label', 'faction-option');
+    const input = el('input');
+    Object.assign(input, { type: 'radio', name, value, checked: selected === value });
+    input.addEventListener('change', () => {
+      if (input.checked) onChange(value);
+    });
+    label.append(input, el('span', null, text));
+    choices.append(label);
+  });
+  group.append(choices);
+  return group;
+}
 function field(form, id, labelText, props) {
   const l = el('label', 'label', labelText);
   l.htmlFor = id;
@@ -182,20 +199,15 @@ function creationPanel(cfg) {
   const fs = el('fieldset', 'shell-fs');
   fs.disabled = !enabled;
   const name = field(fs, 'g-name', 'Guild name', { required: true, minLength: 2, maxLength: 24, placeholder: '2 to 24 characters' });
-  fs.append(el('span', 'label', 'Faction'));
-  const seg = el('div', 'seg');
   const fac = { value: 'horde' };
-  [['horde', 'Horde'], ['alliance', 'Alliance']].forEach(([v, t]) => {
-    const b = btn(t, null, () => { fac.value = v; applyFactionTheme(v); seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b))); });
-    b.setAttribute('role', 'radio');
-    b.setAttribute('aria-checked', String(v === fac.value));
-    seg.append(b);
+  const radios = factionRadios('guild-creation-faction', fac.value, (value) => {
+    fac.value = value;
+    applyFactionTheme(value);
   });
-  seg.setAttribute('role', 'radiogroup');
   const ts = el('div', 'ts-box');
   const go = btn('Create guild', 'primary', null, 'submit');
   const err = msgLine();
-  fs.append(seg, ts, go);
+  fs.append(radios, ts, go);
   form.append(fs, err);
   p.append(form);
   let token = null, wid = null;
@@ -320,23 +332,13 @@ function settingsSection(guild) {
   const d = card('Guild details', null);
   const df = el('form');
   const nm = field(df, 's-name', 'Guild name', { value: guild.name, required: true, minLength: 2, maxLength: 24 });
-  df.append(el('span', 'label', 'Faction'));
-  const fac = { value: guild.faction };
-  const seg = el('div', 'seg');
-  seg.setAttribute('role', 'radiogroup');
-  [['horde', 'Horde'], ['alliance', 'Alliance']].forEach(([v, t]) => {
-    const b = btn(t, null, () => {
-      fac.value = v;
-      document.documentElement.dataset.factionPreview = v;
-      applyGuildIdentity(window.guildContext || guild);
-      seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
-    });
-    b.setAttribute('role', 'radio');
-    b.setAttribute('aria-checked', String(String(guild.faction).toLowerCase() === v));
-    if (String(guild.faction).toLowerCase() === v) fac.value = v;
-    seg.append(b);
+  const fac = { value: String(guild.faction).toLowerCase() };
+  const radios = factionRadios('guild-settings-faction', fac.value, (value) => {
+    fac.value = value;
+    document.documentElement.dataset.factionPreview = value;
+    applyGuildIdentity(window.guildContext || guild);
   });
-  df.append(seg, el('p', 'hint', 'Faction colours preview now; Save applies them. Characters with a race from the other faction are listed after saving.'));
+  df.append(radios, el('p', 'hint', 'Faction colours preview now; Save applies them. Characters with a race from the other faction are listed after saving.'));
   const ds = btn('Save changes', 'primary', null, 'submit');
   const dm = msgLine();
   const out = el('div');

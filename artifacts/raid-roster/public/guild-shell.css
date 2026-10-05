@@ -22,6 +22,15 @@ form .key-input-row .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; }
 .shell-fs { border: 0; padding: 0; margin: 0; min-width: 0; }
 .shell-fs:disabled { opacity: 0.5; }
 .shell-fs .seg { margin-bottom: 8px; }
+.faction-radios { border: 0; padding: 0; margin: 0; min-width: 0; }
+.faction-options { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.faction-option { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
+.faction-option input[type="radio"] {
+  appearance: auto; width: 18px; height: 18px; min-height: 0;
+  padding: 0; margin: 0; accent-color: var(--gold);
+}
+.faction-option input[type="radio"]:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; box-shadow: none; }
+.faction-radios:disabled .faction-option, .shell-fs:disabled .faction-option { cursor: not-allowed; }
 .ts-box { margin: 12px 0 0; min-height: 4px; }
 .shell-root .check { display: flex; gap: 10px; align-items: center; margin: 14px 0 0; }
 .shell-root .check input { width: auto; }

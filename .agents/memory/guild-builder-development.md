@@ -114,6 +114,12 @@ previewing should not silently change guild character eligibility.
 **How to apply:** Keep preview state separate from saved guild identity. Preserve
 the preview during Settings refreshes, and use the server's faction after saving.
 
+Use ordinary radio buttons for Horde/Alliance choices, not sliders or segmented buttons.
+
+**Why:** The user explicitly requested radio buttons for the faction selector.
+
+**How to apply:** Keep this control style in guild creation and Settings when restyling them.
+
 Use the WoW: Forever logo as the app favicon.
 
 **Why:** The user explicitly requested the game logo instead of the generic icon.
