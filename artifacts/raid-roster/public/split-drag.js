@@ -31,10 +31,11 @@ export function moveSplitMember(draft, memberId, teamId, role, defaultRole, part
   return '';
 }
 
-// Native mouse dragging, plus touch/pen dragging from the grip. Existing
-// dropdowns remain the keyboard-accessible alternative.
-export function attachSplitDrag({ root, canEdit, canDrop, onMove }) {
+// Native mouse dragging, touch/pen dragging from the grip, and keyboard
+// pickup/destination/drop controls on that same grip.
+export function attachSplitDrag({ root, canEdit, canDrop, onMove, onBlocked }) {
   let active = null, hovered = null, ghost = null, frame = 0;
+  let keyboardZones = [], keyboardIndex = 0;
   let blockedNative = false;
   const zone = (node) => {
     const target = node?.closest?.('[data-sp-drop-team]');
@@ -45,17 +46,25 @@ export function attachSplitDrag({ root, canEdit, canDrop, onMove }) {
     hovered?.classList.remove('sp-drop-over', 'sp-drop-blocked');
     hovered = target;
     if (active && target) {
-      target.classList.add(canDrop(active.id, target.dataset.spDropTeam, party(target)) ? 'sp-drop-over' : 'sp-drop-blocked');
+      const allowed = canDrop(active.id, target.dataset.spDropTeam, party(target));
+      target.classList.add(allowed ? 'sp-drop-over' : 'sp-drop-blocked');
+      if (!allowed && active.blockedTarget !== target) {
+        const index = party(target);
+        const raid = target.closest('[data-team-id]')?.querySelector('[data-sp-team-name]')?.value || 'This raid';
+        onBlocked?.(index === undefined ? `${raid} is full. Choose another composition.` : `Party ${index + 1} is full (5 players). Choose another party.`);
+      }
+      active.blockedTarget = allowed ? null : target;
     }
   }
   function cancel() {
     cancelAnimationFrame(frame);
-    if (active?.handle?.hasPointerCapture?.(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
+    if (active?.pointerId !== undefined && active.handle?.hasPointerCapture?.(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
     root.querySelectorAll('.sp-dragging').forEach((row) => row.classList.remove('sp-dragging'));
     root.classList.remove('sp-drag-active');
     highlight(null);
     ghost?.remove();
     active = ghost = null;
+    keyboardZones = [];
   }
   function start(row, mode) {
     if (!canEdit()) return false;
@@ -65,6 +74,47 @@ export function attachSplitDrag({ root, canEdit, canDrop, onMove }) {
     root.classList.add('sp-drag-active');
     return true;
   }
+  function announceKeyboard() {
+    const target = keyboardZones[keyboardIndex];
+    if (!target) return;
+    highlight(target);
+    target.scrollIntoView({ block: 'nearest' });
+    const status = root.querySelector('#split-drag-status');
+    const raid = target.closest('[data-team-id]')?.querySelector('[data-sp-team-name]')?.value || 'Raid';
+    const label = target.dataset.spDropTeam ? `${raid}, Party ${party(target) + 1}` : 'Unassigned';
+    if (status) status.textContent = `${label}. ${canDrop(active.id, target.dataset.spDropTeam, party(target)) ? 'Press Enter to place the player.' : 'Full. Choose another party.'} Arrow keys change destination; Escape cancels.`;
+  }
+  root.addEventListener('keydown', (event) => {
+    const handle = event.target.closest?.('[data-sp-drag-handle]');
+    if (!handle) return;
+    if (!active && (event.key === ' ' || event.key === 'Enter')) {
+      const row = handle.closest('[data-sp-member]');
+      if (!row || !start(row, 'keyboard')) return;
+      event.preventDefault();
+      active.handle = handle;
+      keyboardZones = [...root.querySelectorAll('[data-sp-drop-party], #split-pool')].filter((target) => zone(target) === target);
+      const origin = zone(row);
+      keyboardIndex = Math.max(0, (keyboardZones.indexOf(origin) + 1) % keyboardZones.length);
+      announceKeyboard();
+    } else if (active?.mode === 'keyboard') {
+      if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'].includes(event.key)) {
+        event.preventDefault();
+        const delta = ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 1;
+        keyboardIndex = (keyboardIndex + delta + keyboardZones.length) % keyboardZones.length;
+        announceKeyboard();
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const id = active.id;
+        finish(keyboardZones[keyboardIndex]);
+        root.querySelector(`[data-sp-member="${CSS.escape(id)}"] [data-sp-drag-handle]`)?.focus();
+      } else if (event.key === 'Escape' || event.key === 'Tab') {
+        if (event.key === 'Escape') event.preventDefault();
+        cancel();
+        const status = root.querySelector('#split-drag-status');
+        if (status) status.textContent = 'Move cancelled.';
+      }
+    }
+  });
   function finish(target) {
     const id = active?.id;
     const teamId = target?.dataset.spDropTeam;
@@ -115,7 +165,7 @@ export function attachSplitDrag({ root, canEdit, canDrop, onMove }) {
   });
   document.addEventListener('dragend', cancel);
   root.addEventListener('pointerdown', (event) => {
-    blockedNative = Boolean(event.target.closest('select, input, button, a'));
+    blockedNative = Boolean(event.target.closest('select, input, button, a') && !event.target.closest('[data-sp-drag-handle]'));
     if (event.pointerType === 'mouse' || !event.isPrimary) return;
     const handle = event.target.closest('[data-sp-drag-handle]');
     const row = handle?.closest('[data-sp-member]');

@@ -9,7 +9,7 @@ Preserve the completed raid-split feature during the multi-guild conversion.
 
 **How to apply:** Treat splits as part of the existing product when migrating tenancy and verifying the roster, not as deferred scope.
 
-Keep Raid Setup visibly accessible from Composition, not only a separate tab.
+Keep the raid-building workspace visibly accessible from Composition, not only a separate tab.
 
 **Why:** The user could not find the feature and requested that it be a function
 within Composition or visibly linked in the app.
@@ -17,7 +17,7 @@ within Composition or visibly linked in the app.
 **How to apply:** Preserve a clearly labelled Composition entry point and ensure
 navigation does not hide raid-split access on narrow screens.
 
-Raid planning is **Raid Setup**, not only split runs. It must support laying out
+Raid planning uses a **Build Raid** workspace, not only split runs. It must support laying out
 the main raid composition and its party groupings, alongside multi-raid plans.
 
 **Why:** The user said “raid split should be raid setup” so they can set their
@@ -25,6 +25,26 @@ main raid composition and lay out party groupings.
 
 **How to apply:** Preserve the main-raid and party-planning workflow when
 extending this feature; do not reduce it to parallel raids or role columns only.
+
+Keep the builder compact: edit roles through a pencil dialog, not inline
+Tank/Healer/DPS selectors or move/unassign dropdowns. Do not bring back an
+on-page Saved setups section.
+
+**Why:** The user requested a proper UX cleanup because the app felt busy and
+AI-built, with consistent switches, spacing, and styling across the app.
+
+**How to apply:** Prioritize one workspace with 10/20/40 size controls and a
+bottom Add new composition action. Preserve old saved records through a discreet
+chooser; collapse secondary analysis rather than showing repeated warning cards.
+Keep keyboard and touch movement usable when removing dropdown alternatives.
+
+New builds start everyone unassigned; players are assigned by dragging into a
+raid. Multiple compositions can have the same size, including repeated 40s.
+
+**Why:** The user explicitly requested this starting state and repeated sizes.
+
+**How to apply:** Do not auto-distribute members or restrict total planned slots
+to the roster's 100-player limit. Keep actual roster and party capacity safeguards.
 
 Use Classic WoW (Vanilla/Forever) nomenclature throughout the app: Tank, Healer,
 and DPS, not Warden, Mender, or Striker.

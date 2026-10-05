@@ -1,4 +1,4 @@
-// Raid setups: main raid, five-player parties and saved composition scope.
+// Build Raid: one workspace of 10/20/40 compositions, a shared Unassigned pool, saved as one setup.
 import { compareMembersByRoleClass, memberRole } from './member-sort.js';
 import { ROLES, roleOf, iconUrl } from './data.js';
 import { attachSplitDrag, moveSplitMember } from '/split-drag.js';
@@ -7,7 +7,7 @@ import { partyGroups } from './raid-parties.js';
 const MAX_ROSTER = 100;
 const MAX_TEAMS = 10;
 const SIZES = [10, 20, 40];
-const PRESETS = ['2x10', '2x20', '5x20', '10x10', '2x40'];
+const PICK_ROLES = ['tank', 'healer', 'dps'];
 const SCOPE_KEY = `raid-roster-scope:${window.guildContext?.id || 'legacy'}`;
 const $ = (s) => document.querySelector(s);
 
@@ -16,12 +16,12 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
   let storage = '';
   let loadError = '';
   let loaded = false;
-  let draft = null;        // working copy { id?, name, teams, memberRoles }
-  let baseline = '';       // JSON of last saved/opened state
+  let draft = null;
+  let baseline = '';
   let saveError = '';
   let notice = '';
   let saving = false;
-  let layout = 'parties';
+  let poolQ = '';
   const expandedComposition = new Map();
   let scope = readScope();
 
@@ -36,17 +36,42 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     teams: d.teams.map((t) => ({ name: t.name, size: t.size, memberIds: t.memberIds, parties: t.parties })),
     memberRoles: Object.fromEntries(Object.entries(d.memberRoles || {}).sort(([a], [b]) => a.localeCompare(b))) });
   const readOnly = () => storage === 'missing';
+  const locked = () => readOnly() || saving || !loaded || Boolean(loadError);
   const memberMap = () => new Map(getMembers().map((m) => [m.id, m]));
   const isDirty = () => Boolean(draft) && snap(draft) !== baseline;
-  const capacity = (d) => d.teams.reduce((n, t) => n + t.size, 0);
+  const findTeam = (id) => draft.teams.find((t) => t.id === id);
+
+  function uniqueName(base) {
+    const taken = new Set(setups.map((s) => s.name.toLowerCase().replace(/\s+/g, ' ')));
+    let name = base, n = 1;
+    while (taken.has(name.toLowerCase())) name = `${base} ${++n}`;
+    return name;
+  }
+  function blankDraft() {
+    poolQ = '';
+    const team = { id: uid(), name: 'Raid 1', size: 10, memberIds: [], parties: [[], []] };
+    draft = { name: uniqueName('Raid build'), mainTeamId: team.id, memberRoles: {}, teams: [team] };
+    baseline = snap(draft);
+    saveError = ''; notice = '';
+  }
+  function draftFrom(s) {
+    draft = clone({ id: s.id, name: s.name, teams: s.teams.map((t) => ({ ...t, parties: partyGroups(t) })),
+      mainTeamId: s.mainTeamId || s.teams[0]?.id, memberRoles: s.memberRoles || {} });
+    baseline = snap(draft);
+    saveError = ''; notice = '';
+    pruneDraft(false);
+  }
+  // Restore the explicitly saved selection, otherwise start blank.
+  function discardDraft() {
+    const s = setups.find((x) => x.id === draft?.id);
+    if (s) draftFrom(s); else blankDraft();
+  }
+  blankDraft();
 
   function confirmDiscard() {
     if (!isDirty()) return true;
-    if (!confirm('You have unsaved raid setup changes. Discard them?')) return false;
-    draft = null;
-    baseline = '';
-    saveError = '';
-    notice = '';
+    if (!confirm('You have unsaved changes to this build. Discard them?')) return false;
+    discardDraft();
     render();
     return true;
   }
@@ -69,7 +94,6 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     const el = $('#comp-scope');
     if (!el) return;
     const sc = currentScope();
-    // Do not erase a saved selection while its setups are still being fetched.
     if (loaded && !loadError && !sc && scope.teamId) { scope = { setupId: '', teamId: '' }; writeScope(); }
     const setupOpts = `<option value="">Whole roster</option>${setups.map((s) => `<option value="${esc(s.id)}" ${s.id === scope.setupId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
     const cur = setups.find((s) => s.id === scope.setupId);
@@ -89,6 +113,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
 
   // ---------- load ----------
   async function load() {
+    const firstLoad = !loaded;
     try {
       const data = await api('GET', { path: '/splits' });
       setups = data.setups || [];
@@ -98,58 +123,49 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       loadError = e.message || 'Could not load raid setups';
     }
     loaded = true;
-    if (draft) pruneDraft(true);
+    if (!loadError && !isDirty() && !saving) {
+      const s = setups.find((x) => x.id === (firstLoad ? scope.setupId : draft?.id));
+      if (s) draftFrom(s);
+      else if (firstLoad) blankDraft();
+      else if (draft?.id) {
+        delete draft.id;
+        notice = 'This saved build was removed. Your layout is still here; save it as a new build.';
+      }
+    } else if (draft && isDirty()) pruneDraft(true);
     render();
     renderScopeBar();
     onScopeChange(scopeTeam(), true);
   }
 
   function pruneDraft(silent) {
+    if (!getMembers().length && !loaded) return;
     const ids = memberMap();
     const removed = new Set();
     for (const t of draft.teams) {
-      const keep = t.memberIds.filter((id) => { if (ids.has(id)) return true; removed.add(id); return false; });
-      t.memberIds = keep;
+      t.memberIds = t.memberIds.filter((id) => { if (ids.has(id)) return true; removed.add(id); return false; });
       t.parties = partyGroups(t);
     }
     for (const id of Object.keys(draft.memberRoles)) {
       if (!ids.has(id)) { delete draft.memberRoles[id]; removed.add(id); }
     }
-    const dropped = removed.size;
-    if (dropped && !silent) notice = `${dropped} removed member${dropped === 1 ? ' was' : 's were'} dropped from this setup. Save to apply.`;
-    else if (dropped) notice = `${dropped} member${dropped === 1 ? ' was' : 's were'} removed from the roster and dropped from this draft. Save to apply.`;
+    if (removed.size) notice = `${removed.size} player${removed.size === 1 ? ' was' : 's were'} removed from the roster and dropped from this build. Save to apply.`;
   }
 
   // ---------- draft ops ----------
+  function startNew() {
+    if (isDirty() && !confirm('Start a new build? Unsaved changes will be discarded.')) return;
+    blankDraft();
+    render();
+  }
   function openSetup(id) {
-    if (!confirmDiscard()) return;
     const s = setups.find((x) => x.id === id);
     if (!s) return;
-    draft = clone({ id: s.id, name: s.name, teams: s.teams.map((t) => ({ ...t, parties: partyGroups(t) })),
-      mainTeamId: s.mainTeamId || s.teams[0]?.id, memberRoles: s.memberRoles || {} });
-    baseline = snap(draft);
-    saveError = ''; notice = '';
-    pruneDraft(false);
+    if (isDirty() && !confirm('Open this composition? Unsaved changes to the current build will be discarded.')) return;
+    draftFrom(s);
     render();
   }
-  function newFromPreset(p) {
-    if (!confirmDiscard()) return;
-    const [n, size] = p.split('x').map(Number);
-    const teams = Array.from({ length: n }, (_, i) => ({ id: uid(), name: n === 1 ? 'Main raid' : `Raid ${i + 1}`,
-      size, memberIds: [], parties: Array.from({ length: size / 5 }, () => []) }));
-    draft = { name: n === 1 ? `Main raid ${size}` : `Raid setup ${p}`, mainTeamId: teams[0].id, memberRoles: {}, teams };
-    baseline = '';
-    saveError = ''; notice = '';
-    render();
-  }
-  function closeEditor() {
-    if (!confirmDiscard()) return;
-    draft = null; saveError = ''; notice = '';
-    render();
-  }
-  function findTeam(id) { return draft.teams.find((t) => t.id === id); }
   function assign(memberId, teamId, role, partyIndex) {
-    if (!draft || readOnly() || saving) return false;
+    if (!draft || locked()) return false;
     const member = memberMap().get(memberId);
     if (!member) { toast('That player no longer exists. Refresh the roster.', true); return false; }
     const error = moveSplitMember(draft, memberId, teamId, role, roleOf(member.main?.class, member.main?.spec), partyIndex);
@@ -158,31 +174,39 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     return true;
   }
   function addTeam() {
-    if (draft.teams.length >= MAX_TEAMS) return toast(`Up to ${MAX_TEAMS} raids per setup.`, true);
-    if (capacity(draft) + 10 > MAX_ROSTER) return toast(`Total capacity can't exceed ${MAX_ROSTER}.`, true);
-    draft.teams.push({ id: uid(), name: `Raid ${draft.teams.length + 1}`, size: 10, memberIds: [], parties: [[], []] });
+    if (draft.teams.length >= MAX_TEAMS) return toast(`Up to ${MAX_TEAMS} compositions per build.`, true);
+    let n = draft.teams.length + 1;
+    while (draft.teams.some((t) => t.name === `Raid ${n}`)) n++;
+    const team = { id: uid(), name: `Raid ${n}`, size: 10, memberIds: [], parties: [[], []] };
+    draft.teams.push(team);
     render();
+    document.querySelector(`[data-team-id="${CSS.escape(team.id)}"]`)?.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }
   function setSize(teamId, size) {
     const t = findTeam(teamId);
-    if (capacity(draft) - t.size + size > MAX_ROSTER) { toast(`Total capacity can't exceed ${MAX_ROSTER}.`, true); return render(); }
-    if (t.memberIds.length > size) { toast(`${t.name} has ${t.memberIds.length} members — unassign some first.`, true); return render(); }
+    if (!t || t.size === size || !SIZES.includes(size)) return;
+    if (t.memberIds.length > size) { toast(`${t.name} has ${t.memberIds.length} players. Unassign some before shrinking to ${size}.`, true); return render(); }
     t.parties = partyGroups(t, size);
     t.size = size;
     render();
   }
   function removeTeam(teamId) {
-    if (draft.teams.length === 1) return toast('Keep at least one raid in a setup.', true);
+    if (draft.teams.length === 1) return toast('Keep at least one composition.', true);
     const t = findTeam(teamId);
-    if (t.memberIds.length && !confirm(`Remove ${t.name}? Its ${t.memberIds.length} members become unassigned.`)) return;
+    if (t.memberIds.length && !confirm(`Remove ${t.name}? Its ${t.memberIds.length} players become unassigned.`)) return;
     draft.teams = draft.teams.filter((x) => x.id !== teamId);
     if (draft.mainTeamId === teamId) draft.mainTeamId = draft.teams[0].id;
     render();
   }
 
   async function save() {
-    if (!draft || saving || readOnly()) return;
+    if (!draft || locked()) return;
     saveError = '';
+    if (!draft.name.trim() || draft.teams.some((t) => !t.name.trim())) {
+      saveError = 'Give the build and each composition a name before saving.';
+      render();
+      return;
+    }
     saving = true; render();
     try {
       const body = { name: draft.name.trim(), mainTeamId: draft.mainTeamId, memberRoles: draft.memberRoles,
@@ -191,9 +215,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       const { setup } = await api('POST', { path: '/splits', body });
       const i = setups.findIndex((s) => s.id === setup.id);
       if (i >= 0) setups[i] = setup; else setups.push(setup);
-      draft = clone({ id: setup.id, name: setup.name, teams: setup.teams, mainTeamId: setup.mainTeamId, memberRoles: setup.memberRoles || {} });
-      baseline = snap(draft);
-      notice = '';
+      draftFrom(setup);
       toast(`Saved ${setup.name}`);
       scope = { setupId: setup.id, teamId: setup.mainTeamId };
       writeScope();
@@ -208,199 +230,279 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
 
   async function remove(id) {
     const s = setups.find((x) => x.id === id);
-    if (!s || readOnly() || !confirm(`Delete raid setup "${s.name}"?`)) return;
+    if (!s || readOnly() || !confirm(`Delete saved composition "${s.name}"? This cannot be undone.`)) return false;
     try {
       await api('DELETE', { path: '/splits', query: `?id=${encodeURIComponent(id)}` });
       setups = setups.filter((x) => x.id !== id);
-      if (draft?.id === id) { draft = null; baseline = ''; }
+      if (draft?.id === id) blankDraft();
       if (scope.setupId === id) applyScope('', '');
       toast(`Deleted ${s.name}`);
       saveError = '';
+      render(); renderScopeBar();
+      return true;
     } catch (e) {
       saveError = e.message;
       toast(e.message, true);
       if (e.status === 404) load();
+      render();
+      return false;
     }
-    render();
-    renderScopeBar();
   }
 
   // ---------- render ----------
-  function memberRow(m, teamId) {
-    const role = memberRole(m);
-    const roleInfo = ROLES[role];
-    const roleIcon = roleInfo
-      ? `<img class="sp-role-icon" src="${iconUrl(roleInfo.icon)}" alt="${roleInfo.label} role" title="${roleInfo.label}" width="20" height="20">`
-      : '<span class="sp-role-icon" role="img" aria-label="Undecided role" title="Undecided">?</span>';
-    const opts = (cur) => `${cur
-      ? `<option value="${esc(teamId)}" disabled selected>Move / unassign...</option><option value="">Unassign</option>`
-      : '<option value="" disabled selected>Assign to...</option>'
-    }${draft.teams.map((t) => `<optgroup label="${esc(t.name)}">${t.parties.map((group, i) =>
-      `<option value="${esc(t.id)}:${i}" ${group.includes(m.id) || group.length >= 5 ? 'disabled' : ''}>Party ${i + 1} (${group.length}/5)${group.length >= 5 ? ' — full' : ''}</option>`
-    ).join('')}</optgroup>`).join('')}`;
-    return `<li class="sp-member" data-sp-member="${esc(m.id)}" draggable="${readOnly() || saving ? 'false' : 'true'}">
-      <div class="sp-member-identity"><span class="sp-drag-handle" data-sp-drag-handle aria-hidden="true" title="Drag to move">⠿</span>${roleIcon}${nameChip(m)}</div>
-      <div class="sp-member-controls"><select data-sp-role="${esc(m.id)}" aria-label="Raid role for ${esc(m.name)}" ${readOnly() || saving ? 'disabled' : ''}>
-        ${role ? '' : '<option value="" selected>Undecided</option>'}
-        ${Object.entries(ROLES).map(([id, r]) => `<option value="${id}" ${role === id ? 'selected' : ''}>${r.label}</option>`).join('')}
-      </select><select data-sp-move="${esc(m.id)}" aria-label="Move ${esc(m.name)}" ${readOnly() || saving ? 'disabled' : ''}>${opts(Boolean(teamId))}</select></div></li>`;
-  }
+  const withRole = (m) => ({ ...m, raidRole: draft.memberRoles[m.id] });
 
-  function roleColumns(list, teamId) {
-    const sorted = list.map((m) => ({ ...m, raidRole: draft.memberRoles[m.id] })).sort(compareMembersByRoleClass);
-    return `<div class="sp-role-columns">${['tank', 'healer', 'dps', 'none'].map((role) => {
-      const members = sorted.filter((m) => (memberRole(m) || 'none') === role);
-      if (role === 'none' && !members.length) return '';
-      const label = { tank: 'Tanks', healer: 'Healers', dps: 'DPS', none: 'Undecided' }[role];
-      return `<section class="sp-role-column" data-role="${role}" ${role === 'none' ? '' : `data-sp-drop-team="${esc(teamId)}" data-sp-drop-role="${role}"`}>
-        <h3 class="sp-role-heading">${ROLES[role] ? `<img class="sp-role-icon" src="${iconUrl(ROLES[role].icon)}" alt="" width="20" height="20">` : ''}<span>${label}</span><span>${members.length}</span></h3>
-        <ul class="sp-members">${members.length ? members.map((m) => memberRow(m, teamId)).join('') : '<li class="muted">No players</li>'}</ul>
-      </section>`;
-    }).join('')}</div>`;
+  function memberRow(m) {
+    const role = memberRole(m);
+    const info = ROLES[role];
+    const off = locked();
+    const icon = info
+      ? `<img class="sp-role-icon" src="${iconUrl(info.icon)}" alt="" width="18" height="18">`
+      : '<span class="sp-role-icon sp-role-unknown" aria-hidden="true">?</span>';
+    return `<li class="sp-member" data-sp-member="${esc(m.id)}" data-role="${role || 'none'}" draggable="${off ? 'false' : 'true'}">
+      <button type="button" class="sp-grip" data-sp-drag-handle ${off ? 'disabled' : ''} aria-label="Move ${esc(m.name)}. Press Space or Enter to pick up." title="Drag to move">⠿</button>
+      ${icon}<span class="sp-member-name" title="${esc(m.name)}">${nameChip(m)}</span><span class="sp-role-text">${info ? info.label : 'Undecided'}</span>
+      <button type="button" class="sp-edit" data-sp-edit-role="${esc(m.id)}" ${off ? 'disabled' : ''} aria-label="Edit raid role for ${esc(m.name)} (currently ${info ? info.label : 'undecided'})" title="Edit role">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M11.6 1.2a1.2 1.2 0 0 1 1.7 0l1.5 1.5a1.2 1.2 0 0 1 0 1.7L5.4 13.8l-3.9.7.7-3.9z"/></svg></button>
+    </li>`;
   }
 
   function partyHtml(list, team) {
     const mm = new Map(list.map((m) => [m.id, m]));
     return `<div class="sp-party-grid">${team.parties.map((group, i) => {
       const players = group.map((id) => mm.get(id)).filter(Boolean).sort(compareMembersByRoleClass);
-      const counts = Object.fromEntries(['tank', 'healer', 'dps', 'none'].map((r) => [r, players.filter((m) => (memberRole(m) || 'none') === r).length]));
-      return `<section class="sp-party ${group.length >= 5 ? 'full' : ''}" data-sp-drop-team="${esc(team.id)}" data-sp-drop-party="${i}">
-        <h3 class="sp-party-heading"><span>Party ${i + 1}</span><span>${players.length} / 5</span></h3>
-        <p class="hint sp-party-roles">${counts.tank} Tank · ${counts.healer} Healer · ${counts.dps} DPS${counts.none ? ` · ${counts.none} undecided` : ''}</p>
-        <ul class="sp-members">${players.map((m) => memberRow(m, team.id)).join('')}${Array.from({ length: 5 - players.length }, () => '<li class="sp-empty-slot">Empty slot</li>').join('')}</ul>
+      return `<section class="sp-party ${players.length >= 5 ? 'full' : ''}" data-sp-drop-team="${esc(team.id)}" data-sp-drop-party="${i}" aria-label="${esc(team.name)} party ${i + 1}">
+        <h4 class="sp-party-heading"><span>Party ${i + 1}</span><span>${players.length}/5</span></h4>
+        <ul class="sp-members">${players.map(memberRow).join('')}${Array.from({ length: 5 - players.length }, () => '<li class="sp-empty-slot" aria-hidden="true"></li>').join('')}</ul>
       </section>`;
     }).join('')}</div>`;
+  }
+
+  function poolList() {
+    const ids = new Set(draft.teams.flatMap((t) => t.memberIds));
+    const all = getMembers().filter((m) => !ids.has(m.id));
+    const q = poolQ.trim().toLowerCase();
+    const shown = all.filter((m) => !q || m.name.toLowerCase().includes(q)).map(withRole).sort(compareMembersByRoleClass);
+    if (!all.length) return { count: 0, html: `<p class="sp-note">${getMembers().length ? 'Everyone is seated. Drop a player here to unassign.' : 'No sign-ups yet.'}</p>` };
+    if (!shown.length) return { count: all.length, html: `<p class="sp-note">No unassigned player matches “${esc(poolQ.trim())}”.</p>` };
+    const label = { tank: 'Tanks', healer: 'Healers', dps: 'DPS', none: 'Undecided' };
+    return { count: all.length, html: ['tank', 'healer', 'dps', 'none'].map((r) => {
+      const g = shown.filter((m) => (memberRole(m) || 'none') === r);
+      return g.length ? `<div class="sp-pool-group"><h4>${label[r]} <span>${g.length}</span></h4><ul class="sp-members">${g.map(memberRow).join('')}</ul></div>` : '';
+    }).join('') };
+  }
+
+  function teamHtml(t, mm, multi) {
+    const list = t.memberIds.map((id) => mm.get(id)).filter(Boolean).map(withRole).sort(compareMembersByRoleClass);
+    const off = locked();
+    const isMain = draft.mainTeamId === t.id;
+    return `<section class="sp-team ${t.memberIds.length >= t.size ? 'full' : ''}" data-team-id="${esc(t.id)}" data-sp-drop-team="${esc(t.id)}">
+      <header class="sp-team-head">
+        <input class="sp-team-name" data-sp-team-name="${esc(t.id)}" maxlength="40" value="${esc(t.name)}" aria-label="Composition name" ${off ? 'disabled' : ''}>
+        <div class="seg sp-size" role="radiogroup" aria-label="${esc(t.name)} size">${SIZES.map((s) => `<button type="button" role="radio" aria-checked="${s === t.size}" data-sp-size-team="${esc(t.id)}" data-size="${s}" ${off ? 'disabled' : ''}>${s}</button>`).join('')}</div>
+        <span class="sp-team-count" data-sp-count>${t.memberIds.length}/${t.size}</span>
+        ${multi && isMain ? '<span class="sp-main-badge">Main</span>' : ''}
+        <details class="sp-menu"><summary aria-label="Options for ${esc(t.name)}" title="Options">⋯</summary>
+          <div class="sp-menu-pop">
+            ${multi && !isMain ? `<button type="button" data-sp-main-team="${esc(t.id)}" ${off ? 'disabled' : ''}>Set as main raid</button>` : ''}
+            <button type="button" class="danger" data-sp-remove-team="${esc(t.id)}" ${off || !multi ? 'disabled' : ''}>Remove composition</button>
+          </div></details>
+      </header>
+      ${teamComposition(list, t)}
+      ${partyHtml(list, t)}
+    </section>`;
   }
 
   function render() {
     drag.cancel();
     const root = $('#splits-root');
     if (!root) return;
-    root.querySelectorAll('[data-comp-details]').forEach((detail) => {
-      expandedComposition.set(`${detail.closest('[data-team-id]').dataset.teamId}:${detail.dataset.compDetails}`, detail.open);
+    const active = document.activeElement;
+    const refocus = active && root.contains(active) ? (active.dataset.spEditRole ? `[data-sp-edit-role="${CSS.escape(active.dataset.spEditRole)}"]` : active.id ? `#${CSS.escape(active.id)}` : '') : '';
+    root.querySelectorAll('[data-comp-details]').forEach((d) => {
+      expandedComposition.set(`${d.closest('[data-team-id]').dataset.teamId}:${d.dataset.compDetails}`, d.open);
     });
-    const ms = getMembers();
-    const full = ms.length >= MAX_ROSTER;
-    const ro = readOnly() || saving;
-    let html = `<div class="panel sp-head">
-      <div class="panel-head"><h2>Raid Setup</h2>
-        <span class="sp-cap ${full ? 'full' : ''}" id="roster-capacity" data-count="${ms.length}">${ms.length} / ${MAX_ROSTER} roster${full ? ' - full' : ''}</span></div>
-      <p class="hint">Set your main raid composition and arrange its five-player parties. Save different raid plans, or use multiple raids for split runs. Saving selects the main raid on the Composition tab.</p>`;
-    if (readOnly()) html += '<p class="sp-banner warn" id="splits-readonly" role="status">Read-only: storage is not connected, so setups cannot be created, edited or deleted.</p>';
-    if (loadError) html += `<div class="sp-banner bad" id="splits-error" role="alert">Couldn't load raid setups: ${esc(loadError)} <button type="button" class="btn small" data-sp-retry>Retry</button></div>`;
-    else if (!loaded) html += '<p class="muted" id="splits-loading">Loading setups...</p>';
-    html += '</div>';
-
-    if (loaded && !loadError) {
-      html += `<div class="panel"><h2>Saved setups</h2>${setups.length ? `<ul class="sp-list" id="split-list">${setups.map((s) => {
-        const n = s.teams.reduce((a, t) => a + t.memberIds.length, 0);
-        return `<li class="sp-card ${draft?.id === s.id ? 'on' : ''}" data-setup-id="${esc(s.id)}"><div><b>${esc(s.name)}</b><span class="muted"> ${s.teams.length} raids, ${n} assigned, capacity ${s.teams.reduce((a, t) => a + t.size, 0)}</span><span class="sp-main-badge">Main raid: ${esc(s.teams.find((t) => t.id === s.mainTeamId)?.name || s.teams[0]?.name)}</span></div>
-          <div class="sp-actions"><button type="button" class="btn small" data-sp-open="${esc(s.id)}">${draft?.id === s.id ? 'Editing' : 'Edit'}</button><button type="button" class="btn small danger" data-sp-delete="${esc(s.id)}" ${ro ? 'disabled' : ''}>Delete</button></div></li>`;
-      }).join('')}</ul>` : '<p class="empty" id="splits-empty">No saved setups yet. Start from a preset below.</p>'}
-        <div class="label sp-raid-section">Single raid — main raid composition</div>
-        <div class="sp-presets">${SIZES.map((size) => `<button type="button" class="btn small" data-sp-preset="1x${size}" ${ro ? 'disabled' : ''}>${size}-player raid · ${size / 5} parties</button>`).join('')}</div>
-        <div class="label sp-raid-section">Multi-raid setups</div>
-        <div class="sp-presets" id="split-presets">${PRESETS.map((p) => `<button type="button" class="btn small" data-sp-preset="${p}" ${ro ? 'disabled' : ''}>${p.replace('x', ' x ')}</button>`).join('')}</div></div>`;
-    }
-
-    if (draft) html += editorHtml();
-    root.innerHTML = html;
-    root.querySelectorAll('[data-comp-details]').forEach((detail) => {
-      detail.open = expandedComposition.get(`${detail.closest('[data-team-id]').dataset.teamId}:${detail.dataset.compDetails}`) || false;
-    });
-    refreshDirty();
-  }
-
-  function editorHtml() {
-    const ro = readOnly() || saving;
-    const ids = new Set(draft.teams.flatMap((t) => t.memberIds));
+    const off = locked();
     const mm = memberMap();
-    const pool = getMembers().filter((m) => !ids.has(m.id)).sort(compareMembersByRoleClass);
-    const cap = capacity(draft);
-    return `<div class="panel sp-editor" id="split-editor">
-      <div class="panel-head"><h2>${draft.id ? 'Edit setup' : 'New setup'}</h2>
-        <span class="sp-dirty" id="split-dirty" hidden>Unsaved changes</span></div>
+    const multi = draft.teams.length > 1;
+    const pool = poolList();
+    const assigned = draft.teams.reduce((n, t) => n + t.memberIds.length, 0);
+    let html = '<div class="sp-banners">';
+    if (readOnly()) html += '<p class="sp-banner warn" id="splits-readonly" role="status">Read-only: storage is not connected, so builds cannot be saved.</p>';
+    if (loadError) html += `<div class="sp-banner bad" id="splits-error" role="alert">Couldn't load saved compositions: ${esc(loadError)} <button type="button" class="btn small" data-sp-retry>Retry</button></div>`;
+    html += '</div>';
+    html += `<div class="panel sp-editor" id="split-editor">
+      <div class="sp-bar">
+        <h2>Build Raid</h2>
+        <label class="sr-only" for="split-name">Build name</label>
+        <input id="split-name" class="sp-build-name" maxlength="60" value="${esc(draft.name)}" ${off ? 'disabled' : ''} title="Build name. All compositions below are saved together under this name.">
+        <span class="sp-status" id="split-status" role="status"></span>
+        <span class="sp-bar-actions">
+          <button type="button" class="btn small ghost" data-sp-open-list ${loaded && !loadError ? '' : 'disabled'}>Open composition${setups.length ? ` (${setups.length})` : ''}</button>
+          <button type="button" class="btn small ghost" data-sp-new ${off ? 'disabled' : ''}>New build</button>
+          <button type="button" class="btn small primary" id="split-save" data-sp-save ${off ? 'disabled' : ''}>${saving ? 'Saving…' : 'Save build'}</button>
+        </span>
+      </div>
       ${notice ? `<p class="sp-banner warn" id="split-notice">${esc(notice)}</p>` : ''}
       ${saveError ? `<p class="sp-banner bad" id="split-save-error" role="alert">${esc(saveError)}</p>` : ''}
-      <div class="sp-fields"><label class="label" for="split-name">Setup name</label>
-        <input id="split-name" maxlength="60" value="${esc(draft.name)}" ${ro ? 'disabled' : ''}></div>
-      <div class="sp-totals" id="split-totals">${draft.teams.length} / ${MAX_TEAMS} raids, capacity ${cap} / ${MAX_ROSTER}, ${ids.size} assigned, ${pool.length} unassigned</div>
-      <p class="hint">Drag players into parties of five, between raids or back to Unassigned. Role choices are independent of party placement. Switch to Roles to drag into Tank, Healer or DPS columns. On touch screens, use the dotted grip; dropdowns also work. Save to keep this setup.</p>
-      <div class="sp-layout-controls" aria-label="Raid layout"><button type="button" class="btn small" data-sp-layout="parties" aria-pressed="${layout === 'parties'}">Party groups</button><button type="button" class="btn small" data-sp-layout="roles" aria-pressed="${layout === 'roles'}">Roles</button></div>
       <p id="split-drag-status" class="sr-only" aria-live="polite"></p>
-      <div class="sp-teams" id="split-teams">${draft.teams.map((t) => {
-        const full = t.memberIds.length >= t.size;
-        const list = t.memberIds.map((id) => mm.get(id)).filter(Boolean)
-          .map((m) => ({ ...m, raidRole: draft.memberRoles[m.id] })).sort(compareMembersByRoleClass);
-        return `<section class="sp-team ${full ? 'full' : ''}" data-team-id="${esc(t.id)}" data-sp-drop-team="${esc(t.id)}">
-          <header><input class="sp-team-name" data-sp-team-name="${esc(t.id)}" maxlength="40" value="${esc(t.name)}" aria-label="Raid name" ${ro ? 'disabled' : ''}>
-            <select data-sp-size="${esc(t.id)}" aria-label="Raid size" ${ro ? 'disabled' : ''}>${SIZES.map((s) => `<option value="${s}" ${s === t.size ? 'selected' : ''}>${s}-man</option>`).join('')}</select>
-            <button type="button" class="btn small sp-main-toggle" data-sp-main-team="${esc(t.id)}" aria-pressed="${draft.mainTeamId === t.id}" ${ro ? 'disabled' : ''}>${draft.mainTeamId === t.id ? 'Main raid' : 'Set as main'}</button>
-            <button type="button" class="x" data-sp-remove-team="${esc(t.id)}" aria-label="Remove raid" ${ro ? 'disabled' : ''}>Remove</button></header>
-          <div class="sp-count" data-sp-count>${t.memberIds.length} / ${t.size}</div>
-          <div class="meter"><i style="width:${Math.min(100, (t.memberIds.length / t.size) * 100)}%"></i></div>
-          ${teamComposition(list, t)}
-          ${layout === 'parties' ? partyHtml(list, t) : roleColumns(list, t.id)}
-        </section>`;
-      }).join('')}</div>
-      <button type="button" class="btn ghost small" data-sp-add-team ${ro || draft.teams.length >= MAX_TEAMS ? 'disabled' : ''}>+ Add raid</button>
-      <div class="label" data-sp-drop-team="">Unassigned (${pool.length})</div>
-      <div id="split-pool" data-sp-drop-team="">${roleColumns(pool, '')}${pool.length ? '' : '<p class="muted">Everyone is assigned. Drop a player here to unassign.</p>'}</div>
-      <div class="form-actions"><button type="button" class="btn primary" id="split-save" data-sp-save ${ro || saving ? 'disabled' : ''}>${saving ? 'Saving...' : 'Save changes'}</button>
-        <button type="button" class="btn ghost" data-sp-close>${isDirty() ? 'Discard and close' : 'Close'}</button></div>
+      <div class="sp-workspace">
+        <div class="sp-main">
+          <p class="sp-totals" id="split-totals">${draft.teams.length} of ${MAX_TEAMS} compositions · ${assigned} seated · ${pool.count} unassigned</p>
+          <div class="sp-teams" id="split-teams">${draft.teams.map((t) => teamHtml(t, mm, multi)).join('')}</div>
+          <button type="button" class="btn ghost sp-add" data-sp-add-team ${off || draft.teams.length >= MAX_TEAMS ? 'disabled' : ''}>+ New composition</button>
+        </div>
+        <aside class="sp-pool" id="split-pool" data-sp-drop-team="" aria-label="Unassigned players">
+          <div class="sp-pool-head"><h3>Unassigned</h3><span class="sp-pool-count" id="sp-pool-count">${pool.count}</span></div>
+          <input type="search" id="sp-pool-search" value="${esc(poolQ)}" placeholder="Filter players" aria-label="Filter unassigned players" autocomplete="off">
+          <div id="sp-pool-list" class="sp-pool-list">${pool.html}</div>
+        </aside>
+      </div>
     </div>`;
+    root.innerHTML = html;
+    root.querySelectorAll('[data-comp-details]').forEach((d) => {
+      d.open = expandedComposition.get(`${d.closest('[data-team-id]').dataset.teamId}:${d.dataset.compDetails}`) || false;
+    });
+    refreshDirty();
+    if (refocus) root.querySelector(refocus)?.focus({ preventScroll: true });
   }
 
-  // Cheap update used while typing (no re-render, keeps focus).
   function refreshDirty() {
-    const d = $('#split-dirty');
-    if (d) d.hidden = !isDirty();
+    const s = $('#split-status');
+    if (!s) return;
+    const dirty = isDirty();
+    s.textContent = saving ? 'Saving…' : dirty ? 'Unsaved changes' : draft.id ? 'Saved' : '';
+    s.className = `sp-status ${dirty ? 'dirty' : draft.id ? 'saved' : ''}`;
   }
+
+  // ---------- dialogs ----------
+  function makeDialog(id) {
+    const d = document.createElement('dialog');
+    d.id = id; d.className = 'sp-dialog';
+    document.body.append(d);
+    return d;
+  }
+  const roleDialog = makeDialog('sp-role-dialog');
+  const openDialog = makeDialog('sp-open-dialog');
+  roleDialog.setAttribute('aria-labelledby', 'sp-role-title');
+  openDialog.setAttribute('aria-labelledby', 'sp-open-title');
+  let roleTarget = null;
+
+  function inBuild(id) { return draft.teams.some((t) => t.memberIds.includes(id)); }
+
+  function showRoleEditor(id) {
+    const m = memberMap().get(id);
+    if (!m || !draft || locked()) return;
+    roleTarget = id;
+    const cur = memberRole(withRole(m));
+    roleDialog.innerHTML = `<h3 id="sp-role-title">Raid role</h3>
+      <p class="sp-dialog-sub">${nameChip(m)} · this build only. Their sign-up role is unchanged.</p>
+      <fieldset class="sp-role-choices"><legend class="sr-only">Raid role for ${esc(m.name)}</legend>
+        ${PICK_ROLES.map((r) => `<label class="sp-role-choice" style="--rc:${ROLES[r].color}"><input type="radio" name="sp-role" value="${r}" ${cur === r ? 'checked' : ''}>
+          <img src="${iconUrl(ROLES[r].icon)}" alt="" width="20" height="20"><span>${ROLES[r].label}</span></label>`).join('')}
+      </fieldset>
+      <div class="sp-dialog-actions">
+        ${inBuild(id) ? '<button type="button" class="btn small danger" data-role-unassign>Unassign</button>' : ''}
+        <span class="sp-spacer"></span>
+        <button type="button" class="btn small ghost" data-role-cancel>Cancel</button>
+        <button type="button" class="btn small primary" data-role-apply ${cur ? '' : 'disabled'}>Apply</button>
+      </div>`;
+    roleDialog.showModal();
+    (roleDialog.querySelector('input:checked') || roleDialog.querySelector('input'))?.focus();
+  }
+  roleDialog.addEventListener('change', (e) => {
+    if (e.target.name === 'sp-role') roleDialog.querySelector('[data-role-apply]').disabled = false;
+  });
+  roleDialog.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const id = roleTarget;
+    if ('roleCancel' in b.dataset) { roleDialog.close(); return; }
+    if (!id || locked()) return;
+    if ('roleApply' in b.dataset) {
+      const v = roleDialog.querySelector('input[name="sp-role"]:checked')?.value;
+      const member = memberMap().get(id);
+      if (!member) { roleDialog.close(); toast('That player was removed. Refresh the roster.', true); return; }
+      if (!v || !PICK_ROLES.includes(v) || !Object.hasOwn(ROLES, v)) return;
+      if (v === roleOf(member.main?.class, member.main?.spec)) delete draft.memberRoles[id];
+      else draft.memberRoles[id] = v;
+      roleDialog.close();
+      render();
+      document.querySelector(`[data-sp-edit-role="${CSS.escape(id)}"]`)?.focus();
+    } else if ('roleUnassign' in b.dataset) {
+      roleDialog.close();
+      if (assign(id, '')) document.querySelector(`#sp-pool-list [data-sp-edit-role="${CSS.escape(id)}"]`)?.focus();
+    }
+  });
+  roleDialog.addEventListener('close', () => {
+    const id = roleTarget;
+    roleTarget = null;
+    if (id) document.querySelector(`[data-sp-edit-role="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
+  });
+  openDialog.addEventListener('close', () => { document.querySelector('[data-sp-open-list]')?.focus(); });
+
+  function showOpenList() {
+    const rows = setups.length ? `<ul class="sp-saved">${setups.map((s) => {
+      const n = s.teams.reduce((a, t) => a + t.memberIds.length, 0);
+      return `<li><div><b>${esc(s.name)}</b><span class="muted"> ${s.teams.map((t) => t.size).join(' + ')} · ${n} seated</span>${s.id === draft.id ? ' <span class="sp-main-badge">Open</span>' : ''}</div>
+        <span class="sp-bar-actions"><button type="button" class="btn small" data-open-id="${esc(s.id)}">Open</button>
+        <button type="button" class="btn small danger" data-delete-id="${esc(s.id)}" ${readOnly() ? 'disabled' : ''}>Delete</button></span></li>`;
+    }).join('')}</ul>` : '<p class="sp-note">Nothing saved yet. Save a build and it will appear here.</p>';
+    openDialog.innerHTML = `<h3 id="sp-open-title">Open composition</h3>${rows}
+      <div class="sp-dialog-actions"><span class="sp-spacer"></span><button type="button" class="btn small ghost" data-open-close>Close</button></div>`;
+    if (!openDialog.open) openDialog.showModal();
+    openDialog.querySelector('button')?.focus();
+  }
+  openDialog.addEventListener('click', async (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if ('openClose' in b.dataset) openDialog.close();
+    else if (b.dataset.openId) {
+      const s = setups.find((x) => x.id === b.dataset.openId);
+      if (!s) return;
+      if (isDirty() && !confirm('Open this composition? Unsaved changes to the current build will be discarded.')) return;
+      openDialog.close();
+      draftFrom(s);
+      render();
+    } else if (b.dataset.deleteId) {
+      if (await remove(b.dataset.deleteId)) showOpenList();
+    }
+  });
 
   // ---------- events ----------
   document.addEventListener('click', (e) => {
+    document.querySelectorAll('#splits-root .sp-menu[open]').forEach((m) => { if (!m.contains(e.target)) m.open = false; });
     const b = e.target.closest('button');
     if (!b || !b.closest('#splits-root')) return;
     if (b.disabled || saving) return;
     const d = b.dataset;
     if ('spRetry' in d) { loaded = false; loadError = ''; render(); load(); }
-    else if (d.spOpen) openSetup(d.spOpen);
-    else if (d.spDelete) remove(d.spDelete);
-    else if (d.spPreset) newFromPreset(d.spPreset);
-    else if ('spClose' in d) closeEditor();
     else if ('spSave' in d) save();
+    else if ('spNew' in d) startNew();
+    else if ('spOpenList' in d) showOpenList();
     else if ('spAddTeam' in d) addTeam();
     else if (d.spRemoveTeam) removeTeam(d.spRemoveTeam);
-    else if (d.spLayout) { layout = d.spLayout; render(); }
-    else if (d.spMainTeam && draft && !readOnly()) { draft.mainTeamId = d.spMainTeam; render(); }
+    else if (d.spSizeTeam) setSize(d.spSizeTeam, Number(d.size));
+    else if (d.spEditRole) showRoleEditor(d.spEditRole);
+    else if (d.spMainTeam && !readOnly()) { draft.mainTeamId = d.spMainTeam; render(); }
   });
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (t.id === 'scope-setup') { applyScope(t.value, ''); renderScopeBar(); return; }
-    if (t.id === 'scope-team') { applyScope(scope.setupId, t.value); renderScopeBar(); return; }
-    if (!draft || !t.closest('#splits-root')) return;
-    if (readOnly() || saving) return;
-    if (t.dataset.spMove) {
-      const [raid, group] = t.value.split(':');
-      assign(t.dataset.spMove, raid, undefined, group === undefined ? undefined : Number(group));
-      document.querySelector(`[data-sp-move="${CSS.escape(t.dataset.spMove)}"]`)?.focus();
-    }
-    else if (t.dataset.spSize) setSize(t.dataset.spSize, Number(t.value));
-    else if (t.dataset.spRole) {
-      if (t.value && !Object.hasOwn(ROLES, t.value)) return;
-      const member = memberMap().get(t.dataset.spRole);
-      if (!member) return;
-      if (t.value && t.value !== roleOf(member.main?.class, member.main?.spec)) draft.memberRoles[t.dataset.spRole] = t.value;
-      else delete draft.memberRoles[t.dataset.spRole];
-      render();
-      document.querySelector(`[data-sp-role="${CSS.escape(t.dataset.spRole)}"]`)?.focus();
-    }
+    if (t.id === 'scope-team') { applyScope(scope.setupId, t.value); renderScopeBar(); }
   });
   document.addEventListener('input', (e) => {
     const t = e.target;
-    if (!draft) return;
+    if (t.id === 'sp-pool-search') {
+      poolQ = t.value;
+      const p = poolList();
+      $('#sp-pool-list').innerHTML = p.html;
+      $('#sp-pool-count').textContent = p.count;
+      return;
+    }
+    if (!draft || !t.closest?.('#splits-root')) return;
     if (t.id === 'split-name') draft.name = t.value;
-    else if (t.dataset.spTeamName) { findTeam(t.dataset.spTeamName).name = t.value; }
+    else if (t.dataset.spTeamName) { const tm = findTeam(t.dataset.spTeamName); if (tm) tm.name = t.value; }
     else return;
     refreshDirty();
   });
@@ -408,7 +510,8 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
 
   const drag = attachSplitDrag({
     root: $('#splits-root'),
-    canEdit: () => Boolean(draft) && !readOnly() && !saving,
+    canEdit: () => Boolean(draft) && !locked(),
+    onBlocked: (message) => toast(message, true),
     canDrop: (id, teamId, partyIndex) => {
       const team = teamId ? findTeam(teamId) : null;
       return !teamId || Boolean(team && (team.memberIds.includes(id) || team.memberIds.length < team.size) &&
@@ -419,7 +522,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       if (!assign(id, teamId, role, partyIndex)) return;
       const status = $('#split-drag-status');
       const team = teamId ? findTeam(teamId) : null;
-      if (status && member) status.textContent = `${member.name}: ${team ? `${team.name}, Party ${team.parties.findIndex((g) => g.includes(id)) + 1}` : 'Unassigned'}, ${ROLES[memberRole({ ...member, raidRole: draft.memberRoles[id] })]?.label || 'Undecided'}.`;
+      if (status && member) status.textContent = `${member.name}: ${team ? `${team.name}, Party ${team.parties.findIndex((g) => g.includes(id)) + 1}` : 'Unassigned'}.`;
     },
   });
 

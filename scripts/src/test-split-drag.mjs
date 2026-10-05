@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { moveSplitMember } from '../../artifacts/raid-roster/public/split-drag.js';
+import { attachSplitDrag, moveSplitMember } from '../../artifacts/raid-roster/public/split-drag.js';
 
 const setup = () => ({
   teams: [{ id: 'a', name: 'A', size: 10, memberIds: ['player'] }, { id: 'b', name: 'B', size: 10, memberIds: [] }],
@@ -52,5 +52,29 @@ test('unknown teams and invalid roles do not mutate the draft', () => {
     const draft = setup(), before = structuredClone(draft);
     assert.ok(moveSplitMember(draft, 'player', team, role, 'dps'));
     assert.deepEqual(draft, before);
+  }
+});
+
+test('blocked drop targets explain capacity on hover without repeated warnings', () => {
+  const oldDocument = globalThis.document, oldCancel = globalThis.cancelAnimationFrame;
+  globalThis.document = { addEventListener() {} };
+  globalThis.cancelAnimationFrame = () => {};
+  const events = {}, messages = [];
+  const classes = { add() {}, remove() {} };
+  const root = { addEventListener: (type, fn) => { events[type] = fn; }, contains: () => true, querySelectorAll: () => [], classList: classes };
+  const row = { dataset: { spMember: 'player' }, classList: classes, closest: () => row };
+  const target = { dataset: { spDropTeam: 'raid', spDropParty: '0' }, classList: classes,
+    hasAttribute: () => true, closest: (selector) => selector === '[data-team-id]' ? { querySelector: () => ({ value: 'Main raid' }) } : target };
+  try {
+    attachSplitDrag({ root, canEdit: () => true, canDrop: () => false, onMove: () => assert.fail('A hover must not move players'), onBlocked: (message) => messages.push(message) });
+    events.dragstart({ target: row, preventDefault() {}, dataTransfer: { setData() {}, setDragImage() {} } });
+    const hover = { target, preventDefault() {}, dataTransfer: {} };
+    events.dragover(hover);
+    events.dragover(hover);
+    assert.deepEqual(messages, ['Party 1 is full (5 players). Choose another party.']);
+    assert.equal(hover.dataTransfer.dropEffect, 'none');
+  } finally {
+    if (oldDocument === undefined) delete globalThis.document; else globalThis.document = oldDocument;
+    if (oldCancel === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = oldCancel;
   }
 });

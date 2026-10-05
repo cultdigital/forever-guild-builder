@@ -277,20 +277,18 @@ function utilityHtml(A) {
 
 function renderTeamComposition(list, team) {
   const A = analyse(list), target = RAID_SIZES[String(team.size)];
+  const none = A.byRole.none.length;
   return `<aside class="sp-composition" data-sp-composition aria-label="${esc(team.name)} composition check">
-    <div class="sp-comp-head"><h4>Composition check</h4><span>${team.size}-man target · ${team.size - A.total} open slots</span></div>
     <div class="sp-comp-roles">${ROLE_ORDER.map((r) => {
       const have = A.byRole[r].length, want = target[r];
       const { status, className } = compositionRoleStatus(have, want, r);
-      return `<div class="sp-comp-role ${className}" data-comp-role="${r}">
-        <header>${icon(ROLES[r].icon, 'sm', '')}<span>${ROLES[r].label}</span></header>
-        <div class="sp-comp-count"><strong>${have}</strong> / ${want}</div><span class="sp-comp-status">${status}</span>
-        ${A.flex[r].length ? `<div class="sp-comp-flex">Could flex: ${flexNames(A.flex[r], 4)}</div>` : ''}
-      </div>`;
-    }).join('')}</div>
-    <p class="sp-comp-note">${A.byRole.none.length ? `${A.byRole.none.length} undecided; their roles are not counted. ` : ''}Class/spec and utility checks use signed-up characters, not an assumed alt.</p>
-    <details class="sp-comp-details" data-comp-details="gaps"><summary>Gaps &amp; pressure points</summary><ul class="insights">${insightsHtml(A, target, team.size, list)}</ul></details>
-    <details class="sp-comp-details" data-comp-details="utility"><summary>Raid utility</summary><ul class="utility">${utilityHtml(A)}</ul></details>
+      return `<span class="sp-comp-role ${A.total ? className : 'empty'}" data-comp-role="${r}" title="${esc(`${ROLES[r].label}: ${status}`)}">${icon(ROLES[r].icon, 'xs', ROLES[r].label)}<strong>${have}</strong><span class="sp-comp-want">/ ${want}</span><span class="sr-only">${esc(status)}</span></span>`;
+    }).join('')}${none ? `<span class="sp-comp-undecided">${none} undecided</span>` : ''}</div>
+    <details class="sp-comp-details" data-comp-details="details"><summary>Composition details</summary>
+      <p class="sp-comp-note">${none ? `${none} undecided; their roles are not counted. ` : ''}Class/spec and utility checks use signed-up characters, not an assumed alt.</p>
+      <h5>Gaps &amp; pressure points</h5><ul class="insights">${insightsHtml(A, target, team.size, list)}</ul>
+      <h5>Raid utility</h5><ul class="utility">${utilityHtml(A)}</ul>
+    </details>
   </aside>`;
 }
 

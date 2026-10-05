@@ -23,6 +23,18 @@ test('single main raid and five-player parties persist and load', async () => {
   assert.equal(loaded.json.setups[0].memberRoles[ids[0]], 'healer');
 });
 
+test('repeated 10-, 20- and 40-player compositions can exceed 100 planned slots', async () => {
+  const f = fixture();
+  for (const size of [10, 20, 40]) {
+    const teams = Array.from({ length: 3 }, (_, i) => ({ id: `raid-${i}`, name: `Composition ${i + 1}`, size, memberIds: [],
+      parties: Array.from({ length: size / 5 }, () => []) }));
+    const response = await f.request('POST', { name: `Three ${size}s`, teams });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.setup.teams.length, 3);
+    assert.ok(response.json.setup.teams.every((t) => t.memberIds.length === 0 && t.parties.flat().length === 0));
+  }
+});
+
 test('invalid, full, duplicate, unassigned and missing party placements cannot save', async () => {
   const f = fixture();
   const invalid = [

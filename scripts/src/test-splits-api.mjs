@@ -105,8 +105,10 @@ if (!process.argv[2]) {
     invalid.teams[0].memberIds = [];
     invalid.teams[0].size = 30;
     assert.equal((await call('POST', invalid)).status, 400);
-    const tooLarge = { name: 'Too large', teams: Array.from({ length: 3 }, (_, i) => ({ id: `t${i}`, name: `T${i}`, size: 40, memberIds: [] })) };
-    assert.equal((await call('POST', tooLarge)).status, 400);
+    const multipleLarge = { name: 'Three forty-player compositions', teams: Array.from({ length: 3 }, (_, i) => ({ id: `t${i}`, name: `T${i}`, size: 40, memberIds: [] })) };
+    assert.equal((await call('POST', multipleLarge)).status, 200);
+    const tooMany = { name: 'Too many compositions', teams: Array.from({ length: 11 }, (_, i) => ({ id: `overflow${i}`, name: `T${i}`, size: 10, memberIds: [] })) };
+    assert.equal((await call('POST', tooMany)).status, 400);
     const tooFull = structuredClone(saved);
     tooFull.teams[0].size = 10;
     tooFull.teams[0].memberIds = roster.slice(0, 11).map(m => m.id);
