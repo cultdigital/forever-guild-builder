@@ -1,4 +1,6 @@
 // Split setups: saved raid team plans + composition scope. Imperative, no framework.
+import { compareMembersByRoleClass } from './member-sort.js';
+
 const MAX_ROSTER = 100;
 const MAX_TEAMS = 10;
 const SIZES = [10, 20, 40];
@@ -255,7 +257,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     const ro = readOnly() || saving;
     const ids = new Set(draft.teams.flatMap((t) => t.memberIds));
     const mm = memberMap();
-    const pool = getMembers().filter((m) => !ids.has(m.id)).sort((a, b) => a.name.localeCompare(b.name));
+    const pool = getMembers().filter((m) => !ids.has(m.id)).sort(compareMembersByRoleClass);
     const cap = capacity(draft);
     return `<div class="panel sp-editor" id="split-editor">
       <div class="panel-head"><h2>${draft.id ? 'Edit setup' : 'New setup'}</h2>
@@ -267,7 +269,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       <div class="sp-totals" id="split-totals">${draft.teams.length} / ${MAX_TEAMS} teams, capacity ${cap} / ${MAX_ROSTER}, ${ids.size} assigned, ${pool.length} unassigned</div>
       <div class="sp-teams" id="split-teams">${draft.teams.map((t) => {
         const full = t.memberIds.length >= t.size;
-        const list = t.memberIds.map((id) => mm.get(id)).filter(Boolean);
+        const list = t.memberIds.map((id) => mm.get(id)).filter(Boolean).sort(compareMembersByRoleClass);
         return `<section class="sp-team ${full ? 'full' : ''}" data-team-id="${esc(t.id)}">
           <header><input class="sp-team-name" data-sp-team-name="${esc(t.id)}" maxlength="40" value="${esc(t.name)}" aria-label="Team name" ${ro ? 'disabled' : ''}>
             <select data-sp-size="${esc(t.id)}" aria-label="Team size" ${ro ? 'disabled' : ''}>${SIZES.map((s) => `<option value="${s}" ${s === t.size ? 'selected' : ''}>${s}-man</option>`).join('')}</select>

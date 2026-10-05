@@ -76,6 +76,13 @@ while retaining the footer link.
 **How to apply:** Do not reintroduce donation prompts based on roster size or
 login state.
 
+Use role/class grouping for raid-split player lists rather than name-only order.
+
+**Why:** The user requested sorting the unassigned players by role/class.
+
+**How to apply:** Preserve this grouping when moving players into or out of
+teams and when changing the split editor layout.
+
 Do not infer application indexing rules from preview-domain robots headers alone.
 
 **Why:** Preview-domain responses contained extra site-wide `noindex` directives,

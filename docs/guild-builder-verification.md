@@ -7,7 +7,7 @@ were explicitly deferred; no bot-protection bypass was introduced.
 
 ## Completed checks
 
-- 37 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
+- 40 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
   credential hashing, session signing/revocation, creation and login throttling,
   write/read limits, capacity, settings, rotation, recovery, deletion, faction
   validation, expiry, stale-write rejection and idempotent migration.
@@ -17,6 +17,11 @@ were explicitly deferred; no bot-protection bypass was introduced.
   a server-rendered robots meta tag. HTTP checks cover aliases, nested paths,
   encoded paths, errors and HEAD responses; public pages remain indexable.
   Crawling is allowed in robots.txt so crawlers can see the noindex directives.
+- Split member sorting checks cover Tank/Healer/DPS order, class/name grouping,
+  pure-DPS classes without specs, undecided roles and using mains rather than alts.
+  Workspace Playwright verified all 21 players in a temporary unsaved draft,
+  team assignment/unassignment and mobile ordering. Discarding the draft left
+  existing saved split plans unchanged.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,
