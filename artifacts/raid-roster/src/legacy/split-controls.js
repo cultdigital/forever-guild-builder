@@ -1,5 +1,6 @@
 // Split setups: saved raid team plans + composition scope. Imperative, no framework.
-import { compareMembersByRoleClass } from './member-sort.js';
+import { compareMembersByRoleClass, memberRole } from './member-sort.js';
+import { ROLES, roleOf, iconUrl } from './data.js';
 
 const MAX_ROSTER = 100;
 const MAX_TEAMS = 10;
@@ -13,7 +14,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
   let storage = '';
   let loadError = '';
   let loaded = false;
-  let draft = null;        // working copy { id?, name, teams }
+  let draft = null;        // working copy { id?, name, teams, memberRoles }
   let baseline = '';       // JSON of last saved/opened state
   let saveError = '';
   let notice = '';
@@ -27,7 +28,8 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
 
   const uid = () => `t-${Math.random().toString(36).slice(2, 9)}`;
   const clone = (x) => JSON.parse(JSON.stringify(x));
-  const snap = (d) => JSON.stringify({ name: d.name, teams: d.teams.map((t) => ({ name: t.name, size: t.size, memberIds: t.memberIds })) });
+  const snap = (d) => JSON.stringify({ name: d.name, teams: d.teams.map((t) => ({ name: t.name, size: t.size, memberIds: t.memberIds })),
+    memberRoles: Object.fromEntries(Object.entries(d.memberRoles || {}).sort(([a], [b]) => a.localeCompare(b))) });
   const readOnly = () => storage === 'missing';
   const memberMap = () => new Map(getMembers().map((m) => [m.id, m]));
   const isDirty = () => Boolean(draft) && snap(draft) !== baseline;
@@ -54,7 +56,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     const sc = currentScope();
     if (!sc) return getMembers();
     const ids = new Set(sc.team.memberIds);
-    return getMembers().filter((m) => ids.has(m.id));
+    return getMembers().filter((m) => ids.has(m.id)).map((m) => ({ ...m, raidRole: sc.setup.memberRoles?.[m.id] }));
   }
   function scopeTeam() { return currentScope()?.team || null; }
 
@@ -99,12 +101,15 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
 
   function pruneDraft(silent) {
     const ids = memberMap();
-    let dropped = 0;
+    const removed = new Set();
     for (const t of draft.teams) {
-      const keep = t.memberIds.filter((id) => ids.has(id));
-      dropped += t.memberIds.length - keep.length;
+      const keep = t.memberIds.filter((id) => { if (ids.has(id)) return true; removed.add(id); return false; });
       t.memberIds = keep;
     }
+    for (const id of Object.keys(draft.memberRoles)) {
+      if (!ids.has(id)) { delete draft.memberRoles[id]; removed.add(id); }
+    }
+    const dropped = removed.size;
     if (dropped && !silent) notice = `${dropped} removed member${dropped === 1 ? ' was' : 's were'} dropped from this setup. Save to apply.`;
     else if (dropped) notice = `${dropped} member${dropped === 1 ? ' was' : 's were'} removed from the roster and dropped from this draft. Save to apply.`;
   }
@@ -114,7 +119,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     if (!confirmDiscard()) return;
     const s = setups.find((x) => x.id === id);
     if (!s) return;
-    draft = clone({ id: s.id, name: s.name, teams: s.teams });
+    draft = clone({ id: s.id, name: s.name, teams: s.teams, memberRoles: s.memberRoles || {} });
     baseline = snap(draft);
     saveError = ''; notice = '';
     pruneDraft(false);
@@ -123,7 +128,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
   function newFromPreset(p) {
     if (!confirmDiscard()) return;
     const [n, size] = p.split('x').map(Number);
-    draft = { name: `Split ${p}`, teams: Array.from({ length: n }, (_, i) => ({ id: uid(), name: `Team ${i + 1}`, size, memberIds: [] })) };
+    draft = { name: `Split ${p}`, memberRoles: {}, teams: Array.from({ length: n }, (_, i) => ({ id: uid(), name: `Team ${i + 1}`, size, memberIds: [] })) };
     baseline = '';
     saveError = ''; notice = '';
     render();
@@ -176,12 +181,12 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     saveError = '';
     saving = true; render();
     try {
-      const body = { name: draft.name.trim(), teams: draft.teams.map((t) => ({ id: t.id, name: t.name.trim(), size: t.size, memberIds: t.memberIds })) };
+      const body = { name: draft.name.trim(), memberRoles: draft.memberRoles, teams: draft.teams.map((t) => ({ id: t.id, name: t.name.trim(), size: t.size, memberIds: t.memberIds })) };
       if (draft.id) body.id = draft.id;
       const { setup } = await api('POST', { path: '/splits', body });
       const i = setups.findIndex((s) => s.id === setup.id);
       if (i >= 0) setups[i] = setup; else setups.push(setup);
-      draft = clone({ id: setup.id, name: setup.name, teams: setup.teams });
+      draft = clone({ id: setup.id, name: setup.name, teams: setup.teams, memberRoles: setup.memberRoles || {} });
       baseline = snap(draft);
       notice = '';
       toast(`Saved ${setup.name}`);
@@ -215,12 +220,37 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
 
   // ---------- render ----------
   function memberRow(m, teamId) {
+    const role = memberRole(m);
+    const roleInfo = ROLES[role];
+    const roleIcon = roleInfo
+      ? `<img class="sp-role-icon" src="${iconUrl(roleInfo.icon)}" alt="${roleInfo.label} role" title="${roleInfo.label}" width="20" height="20">`
+      : '<span class="sp-role-icon" role="img" aria-label="Undecided role" title="Undecided">?</span>';
+    const originalRole = ROLES[roleOf(m.main?.class, m.main?.spec)]?.label || 'Undecided';
+    const override = draft.memberRoles[m.id] || '';
     const others = draft.teams.filter((t) => t.id !== teamId);
     const opts = (cur) => `${cur
       ? `<option value="${esc(teamId)}" disabled selected>Move / unassign...</option><option value="">Unassign</option>`
       : '<option value="" disabled selected>Assign to...</option>'
     }${others.map((t) => `<option value="${esc(t.id)}" ${t.memberIds.length >= t.size ? 'disabled' : ''}>${esc(t.name)}${t.memberIds.length >= t.size ? ' (full)' : ''}</option>`).join('')}`;
-    return `<li class="sp-member" data-sp-member="${esc(m.id)}">${nameChip(m)}<select data-sp-move="${esc(m.id)}" aria-label="Move ${esc(m.name)}" ${readOnly() || saving ? 'disabled' : ''}>${opts(Boolean(teamId))}</select></li>`;
+    return `<li class="sp-member" data-sp-member="${esc(m.id)}">
+      <div class="sp-member-identity">${roleIcon}${nameChip(m)}</div>
+      <div class="sp-member-controls"><select data-sp-role="${esc(m.id)}" aria-label="Raid role for ${esc(m.name)}" ${readOnly() || saving ? 'disabled' : ''}>
+        <option value="" ${override ? '' : 'selected'}>Roster (${originalRole})</option>
+        ${Object.entries(ROLES).map(([id, r]) => `<option value="${id}" ${override === id ? 'selected' : ''}>${r.label}</option>`).join('')}
+      </select><select data-sp-move="${esc(m.id)}" aria-label="Move ${esc(m.name)}" ${readOnly() || saving ? 'disabled' : ''}>${opts(Boolean(teamId))}</select></div></li>`;
+  }
+
+  function roleColumns(list, teamId) {
+    const sorted = list.map((m) => ({ ...m, raidRole: draft.memberRoles[m.id] })).sort(compareMembersByRoleClass);
+    return `<div class="sp-role-columns">${['tank', 'healer', 'dps', 'none'].map((role) => {
+      const members = sorted.filter((m) => (memberRole(m) || 'none') === role);
+      if (role === 'none' && !members.length) return '';
+      const label = { tank: 'Tanks', healer: 'Healers', dps: 'DPS', none: 'Undecided' }[role];
+      return `<section class="sp-role-column" data-role="${role}">
+        <h3 class="sp-role-heading">${ROLES[role] ? `<img class="sp-role-icon" src="${iconUrl(ROLES[role].icon)}" alt="" width="20" height="20">` : ''}<span>${label}</span><span>${members.length}</span></h3>
+        <ul class="sp-members">${members.length ? members.map((m) => memberRow(m, teamId)).join('') : '<li class="muted">No players</li>'}</ul>
+      </section>`;
+    }).join('')}</div>`;
   }
 
   function render() {
@@ -233,7 +263,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       <div class="panel-head"><h2>Split setups</h2>
         <span class="sp-cap ${full ? 'full' : ''}" id="roster-capacity" data-count="${ms.length}">${ms.length} / ${MAX_ROSTER} roster${full ? ' - full' : ''}</span></div>
       <p class="hint">Save named team plans, then pick a team on the Composition tab to analyse just those members.</p>`;
-    if (ro) html += '<p class="sp-banner warn" id="splits-readonly" role="status">Read-only: storage is not connected, so setups cannot be created, edited or deleted.</p>';
+    if (readOnly()) html += '<p class="sp-banner warn" id="splits-readonly" role="status">Read-only: storage is not connected, so setups cannot be created, edited or deleted.</p>';
     if (loadError) html += `<div class="sp-banner bad" id="splits-error" role="alert">Couldn't load split setups: ${esc(loadError)} <button type="button" class="btn small" data-sp-retry>Retry</button></div>`;
     else if (!loaded) html += '<p class="muted" id="splits-loading">Loading setups...</p>';
     html += '</div>';
@@ -267,6 +297,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       <div class="sp-fields"><label class="label" for="split-name">Setup name</label>
         <input id="split-name" maxlength="60" value="${esc(draft.name)}" ${ro ? 'disabled' : ''}></div>
       <div class="sp-totals" id="split-totals">${draft.teams.length} / ${MAX_TEAMS} teams, capacity ${cap} / ${MAX_ROSTER}, ${ids.size} assigned, ${pool.length} unassigned</div>
+      <p class="hint">Choose each player's raid role below. Role choices are saved for this setup only; their main roster class and spec stay unchanged. Select “Roster” to use their main role again.</p>
       <div class="sp-teams" id="split-teams">${draft.teams.map((t) => {
         const full = t.memberIds.length >= t.size;
         const list = t.memberIds.map((id) => mm.get(id)).filter(Boolean).sort(compareMembersByRoleClass);
@@ -276,12 +307,12 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
             <button type="button" class="x" data-sp-remove-team="${esc(t.id)}" aria-label="Remove team" ${ro ? 'disabled' : ''}>Remove</button></header>
           <div class="sp-count" data-sp-count>${t.memberIds.length} / ${t.size}</div>
           <div class="meter"><i style="width:${Math.min(100, (t.memberIds.length / t.size) * 100)}%"></i></div>
-          <ul class="sp-members">${list.length ? list.map((m) => memberRow(m, t.id)).join('') : '<li class="muted">No members assigned</li>'}</ul>
+          ${roleColumns(list, t.id)}
         </section>`;
       }).join('')}</div>
       <button type="button" class="btn ghost small" data-sp-add-team ${ro || draft.teams.length >= MAX_TEAMS ? 'disabled' : ''}>+ Add team</button>
       <div class="label">Unassigned (${pool.length})</div>
-      <ul class="sp-members sp-pool" id="split-pool">${pool.length ? pool.map((m) => memberRow(m, '')).join('') : '<li class="muted">Everyone is assigned.</li>'}</ul>
+      <div id="split-pool">${roleColumns(pool, '')}${pool.length ? '' : '<p class="muted">Everyone is assigned.</p>'}</div>
       <div class="form-actions"><button type="button" class="btn primary" id="split-save" data-sp-save ${ro || saving ? 'disabled' : ''}>${saving ? 'Saving...' : 'Save changes'}</button>
         <button type="button" class="btn ghost" data-sp-close>${isDirty() ? 'Discard and close' : 'Close'}</button></div>
     </div>`;
@@ -313,8 +344,16 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     if (t.id === 'scope-setup') { applyScope(t.value, ''); renderScopeBar(); return; }
     if (t.id === 'scope-team') { applyScope(scope.setupId, t.value); renderScopeBar(); return; }
     if (!draft || !t.closest('#splits-root')) return;
+    if (readOnly() || saving) return;
     if (t.dataset.spMove) assign(t.dataset.spMove, t.value);
     else if (t.dataset.spSize) setSize(t.dataset.spSize, Number(t.value));
+    else if (t.dataset.spRole) {
+      if (t.value && !Object.hasOwn(ROLES, t.value)) return;
+      if (t.value) draft.memberRoles[t.dataset.spRole] = t.value;
+      else delete draft.memberRoles[t.dataset.spRole];
+      render();
+      document.querySelector(`[data-sp-role="${CSS.escape(t.dataset.spRole)}"]`)?.focus();
+    }
   });
   document.addEventListener('input', (e) => {
     const t = e.target;

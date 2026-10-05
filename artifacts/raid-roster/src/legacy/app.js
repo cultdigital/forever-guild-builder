@@ -3,6 +3,7 @@ import {
   getSpec, roleOf, iconUrl, getFactionData, RACES as HORDE_RACES, ALLIANCE_RACES,
 } from './data.js';
 import { createSplits } from './split-controls.js';
+import { memberRole } from './member-sort.js';
 import { applyGuildIdentity } from '/guild-identity.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -103,7 +104,7 @@ function analyse(list = members) {
   const races = {};
 
   for (const m of list) {
-    const r = roleOf(m.main.class, m.main.spec);
+    const r = memberRole(m);
     byRole[r || 'none'].push(m);
     const C = cls[m.main.class];
     if (C) {
@@ -328,7 +329,7 @@ const CLASS_ORDER = Object.keys(CLASSES);
 const plateSort = (a, b) => asgIdx(a) - asgIdx(b) || CLASS_ORDER.indexOf(a.main.class) - CLASS_ORDER.indexOf(b.main.class) || a.name.localeCompare(b.name);
 
 function plate(m) {
-  const r = roleOf(m.main.class, m.main.spec);
+  const r = memberRole(m);
   const race = RACES[m.main.race] || HORDE_RACES[m.main.race] || ALLIANCE_RACES[m.main.race];
   const asg = ASSIGNMENTS[m.assignment];
   const spec = getSpec(m.main.class, m.main.spec);
@@ -357,7 +358,7 @@ function plate(m) {
 }
 
 function renderTankFrames() {
-  const tanks = splits.scopeMembers().filter((m) => roleOf(m.main.class, m.main.spec) === 'tank' || ['mt', 'ot', 'flex'].includes(m.assignment)).sort(plateSort);
+  const tanks = splits.scopeMembers().filter((m) => memberRole(m) === 'tank' || (!m.raidRole && ['mt', 'ot', 'flex'].includes(m.assignment))).sort(plateSort);
   $('#tank-frames').innerHTML = tanks.length ? tanks.map(plate).join('') : '<p class="empty">No tanks yet.</p>';
 }
 
@@ -371,7 +372,7 @@ function renderRoster() {
   const q = filters.q.toLowerCase();
   const rows = members.filter((m) => {
     if (q && !m.name.toLowerCase().includes(q)) return false;
-    const r = roleOf(m.main.class, m.main.spec) || 'none';
+    const r = memberRole(m) || 'none';
     if (filters.role !== 'all' && r !== filters.role) return false;
     if (filters.cls && m.main.class !== filters.cls && !m.alts.some((a) => a.class === filters.cls)) return false;
     return true;
@@ -379,7 +380,7 @@ function renderRoster() {
 
   const groups = [['tank', 'Tanks'], ['healer', 'Healers'], ['dps', 'DPS'], ['none', 'Undecided']];
   $('#raid-frames').innerHTML = groups.map(([g, label]) => {
-    const list = rows.filter((m) => (roleOf(m.main.class, m.main.spec) || 'none') === g).sort(plateSort);
+    const list = rows.filter((m) => (memberRole(m) || 'none') === g).sort(plateSort);
     if (!list.length) return '';
     return `<section class="raid-group g-${g}">
       <header class="rg-head">${icon(g === 'none' ? 'inv_misc_questionmark' : ROLES[g].icon, 'sm')}<h3>${label}</h3><span class="rg-count">${list.length}</span></header>
@@ -737,6 +738,7 @@ window.addEventListener('hashchange', () => {
   closePop(); showTab();
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+document.addEventListener('guild-settings-saved', load);
 
 // Tooltips
 const tip = $('#tooltip');

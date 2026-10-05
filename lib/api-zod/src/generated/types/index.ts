@@ -36,6 +36,7 @@ export * from './rosterMember';
 export * from './saveRosterMember200';
 export * from './saveSplitSetup200';
 export * from './splitInput';
+export * from './splitMemberRoles';
 export * from './splitSetup';
 export * from './splitTeam';
 export * from './splitTeamSize';

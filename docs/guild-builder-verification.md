@@ -7,7 +7,7 @@ were explicitly deferred; no bot-protection bypass was introduced.
 
 ## Completed checks
 
-- 44 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
+- 53 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
   credential hashing, session signing/revocation, creation and login throttling,
   write/read limits, capacity, settings, rotation, recovery, deletion, faction
   validation, expiry, stale-write rejection and idempotent migration.
@@ -33,6 +33,23 @@ were explicitly deferred; no bot-protection bypass was introduced.
   rejected saves, saved-faction rendering with invalid-race warnings, and
   persistence after reload. Save checks used isolated browser fixtures; the
   real test-guild preview left its stored metadata unchanged.
+- Authenticated POST settings updates preserve PATCH compatibility and reject a
+  stale expected-guild context. Network checks cover confirmed lost responses,
+  one retry for unapplied changes, explicit unconfirmed outcomes and expired
+  sessions without retries of validation errors.
+- Workspace Playwright used a disposable, test-owned real Redis guild to verify
+  faction saves both ways, lost-response recovery, retry after a dropped request,
+  Show/Hide and copied invites on desktop/mobile, and invite-fragment sign-in.
+  Supplied sign-in keys remain only in volatile page memory, survive same-page
+  settings refreshes and clear on full reload; browser storage was checked.
+  The temporary guild was removed; existing user guilds were not modified.
+- Split role choices: API checks pass with isolated local, simulated Redis and
+  missing storage. Valid choices persist without changing the main roster;
+  invalid roles/member IDs are rejected, older callers preserve choices, and
+  removed members are pruned. Browser verification on a disposable real Redis
+  guild passed role icons/columns, moving players with role choices intact,
+  save/reload/reopen, setup isolation, team-scoped Composition counts, restoring
+  the roster default, and desktop/mobile layouts without horizontal overflow.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,

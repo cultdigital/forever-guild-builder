@@ -105,6 +105,17 @@ test('delete requires the current key and exact guild-name confirmation; another
   assert.equal((await f.call('GET', '/api/guild', {}, b.cookie)).json.guild.name, 'Beta');
 });
 
+test('POST settings saves faction changes and rejects a stale guild context', async () => {
+  const f = setup(), a = await f.create('Post Settings');
+  const id = a.json.guild.id;
+  const saved = await f.call('POST', '/api/guild', { name: 'Post Settings', faction: 'alliance', expectedGuildId: id }, a.cookie);
+  assert.equal(saved.status, 200);
+  assert.equal(saved.json.guild.faction, 'alliance');
+  await assert.rejects(f.call('POST', '/api/guild', { faction: 'horde', expectedGuildId: 'other-guild' }, a.cookie), { status: 409 });
+  assert.equal((await f.call('GET', '/api/guild', {}, a.cookie)).json.guild.faction, 'alliance');
+  await assert.rejects(f.call('POST', '/api/guild', { faction: 'horde' }), { status: 401 });
+});
+
 test('100-member ceiling remains atomic; existing edits and deletes remain available at capacity', async () => {
   const f = setup(), a = await f.create('Full Guild');
   const repository = createGuildRepository(f.redis);

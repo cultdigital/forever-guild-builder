@@ -1,11 +1,15 @@
 import { privacyPage, demoPanel } from '/guild-extras.js';
 import { applyFactionTheme, applyGuildIdentity } from '/guild-identity.js';
+import { saveGuildDetails } from '/guild-settings.js';
 const root = document.getElementById('shell-root');
 const rosterRoot = document.getElementById('roster-root');
 const bar = document.getElementById('shell-bar');
 const barMsg = document.getElementById('shell-bar-msg');
 let appLoaded = false;
 let guardOn = false;
+// Volatile only: never write guild keys to browser storage or cookies.
+let enteredGuildKey = null;
+const keyVisibility = new WeakMap();
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -19,7 +23,13 @@ window.addEventListener('beforeunload', guard);
 async function api(path, opts = {}) {
   const res = await fetch(path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opts });
   let body = null;
-  try { body = await res.json(); } catch { /* ignore */ }
+  try { body = await res.json(); } catch (error) {
+    if (error instanceof TypeError || error.name === 'AbortError') throw error;
+    throw new Error('The server returned an unreadable response. Reload and check your saved settings.');
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new Error('The server returned an unreadable response. Reload and check your saved settings.');
+  }
   if (!res.ok) {
     const err = new Error((body && body.error) || 'Request failed (' + res.status + ')');
     err.status = res.status;
@@ -53,12 +63,15 @@ function field(form, id, labelText, props) {
     i.autocapitalize = 'none';
     i.setAttribute('autocorrect', 'off');
     const row = el('div', 'key-input-row');
-    const toggle = btn('Show key', 'small ghost', () => {
-      const showing = i.type === 'password';
+    const setVisible = (showing) => {
       i.type = showing ? 'text' : 'password';
       toggle.textContent = showing ? 'Hide key' : 'Show key';
       toggle.setAttribute('aria-pressed', String(showing));
+    };
+    const toggle = btn('Show key', 'small ghost', () => {
+      setVisible(i.type === 'password');
     });
+    keyVisibility.set(i, setVisible);
     toggle.setAttribute('aria-controls', id);
     toggle.setAttribute('aria-pressed', 'false');
     row.append(i, toggle);
@@ -247,7 +260,9 @@ async function home() {
 /* ---------- login + recovery ---------- */
 async function enter(slug, key) {
   const { guild } = await send('POST', '/api/session', { slug, key });
+  enteredGuildKey = { guildId: guild.id, key };
   history.replaceState(null, '', '/g/' + guild.slug + location.search);
+  return guild;
 }
 
 function login(slug, msg) {
@@ -261,7 +276,7 @@ function login(slug, msg) {
   form.append(go, err);
   form.onsubmit = (e) => {
     e.preventDefault();
-    run(go, err, async () => { await enter(slug, input.value.trim()); location.reload(); });
+    run(go, err, async () => { const guild = await enter(slug, input.value.trim()); await roster(guild); });
   };
   p.append(form);
 
@@ -328,12 +343,24 @@ function settingsSection(guild) {
   df.onsubmit = (e) => {
     e.preventDefault();
     run(ds, dm, async () => {
-      const r = await send('PATCH', '/api/guild', { name: nm.value.trim(), faction: fac.value });
+      const r = await saveGuildDetails(api, window.guildContext || guild, { name: nm.value.trim(), faction: fac.value });
       window.guildContext = r.guild;
       delete document.documentElement.dataset.factionPreview;
       applyGuildIdentity(r.guild);
       const bad = r.invalidRaces || [];
-      const done = () => { guardOn = false; location.reload(); };
+      const done = () => {
+        guardOn = false;
+        out.replaceChildren();
+        dm.className = 'form-msg success';
+        dm.textContent = 'Guild details saved.';
+        // Refresh roster data without discarding the in-memory sign-in key.
+        document.dispatchEvent(new CustomEvent('guild-settings-saved'));
+      };
+      if (r.confirmedAfterReconnect) {
+        out.replaceChildren(notice('Saved. The connection dropped before character checks were returned. Reload the roster to use the saved faction.'));
+        out.append(btn('Reload roster', 'primary', done));
+        return;
+      }
       if (!bad.length) return done();
       out.replaceChildren(notice('Saved. These characters now have a race that does not fit the faction. Ask them to update their sign-up:'));
       const ul = el('ul', 'shell-list');
@@ -344,9 +371,12 @@ function settingsSection(guild) {
   d.append(df);
 
   // invite
-  const iv = card('Invite link', 'Keys are stored hashed and cannot be recovered, so confirm the current key to build an invite link.');
+  const knownKey = enteredGuildKey?.guildId === guild.id ? enteredGuildKey.key : '';
+  const iv = card('Invite link', knownKey
+    ? 'Your sign-in key is filled in for this page session only. Show it or copy the invite link; it is not saved in browser storage.'
+    : 'Enter the current guild key to show it or build an invite link. The server stores only a hash and cannot retrieve the original key.');
   const ifm = el('form');
-  const ik = keyField(ifm, 's-ikey');
+  const ik = field(ifm, 's-ikey', 'Current guild key', { type: 'password', required: true, value: knownKey, placeholder: 'Enter your guild key' });
   const ib = btn('Copy invite link', null, null, 'submit');
   const im = msgLine();
   ifm.append(ib, im);
@@ -357,7 +387,7 @@ function settingsSection(guild) {
       await send('POST', '/api/session', { slug: guild.slug, key });
       const url = location.origin + '/g/' + guild.slug + '#k=' + encodeURIComponent(key);
       await navigator.clipboard.writeText(url);
-      ik.value = '';
+      keyVisibility.get(ik)(false);
       im.className = 'form-msg success';
       im.textContent = 'Invite link copied. Anyone with it can enter the guild.';
     });
@@ -458,6 +488,7 @@ document.getElementById('logout-btn').onclick = async (e) => {
   barMsg.textContent = '';
   try {
     await send('DELETE', '/api/session');
+    enteredGuildKey = null;
     location.replace('/');
   } catch (x) {
     barMsg.textContent = 'Log out failed: ' + x.message;
@@ -487,8 +518,8 @@ async function boot() {
   const frag = location.hash.match(/^#k=(.+)$/);
   if (frag) {
     try {
-      await enter(slug, decodeURIComponent(frag[1]));
-      return location.reload();
+      const guild = await enter(slug, decodeURIComponent(frag[1]));
+      return await roster(guild);
     } catch (e) {
       history.replaceState(null, '', location.pathname + location.search);
       return login(slug, 'The invite link did not work: ' + e.message);

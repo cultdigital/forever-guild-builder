@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compareMembersByRoleClass } from '../../lib/roster/src/member-sort.js';
+import { compareMembersByRoleClass, memberRole } from '../../lib/roster/src/member-sort.js';
 
 const member = (id, name, cls, spec) => ({ id, name, main: { class: cls, spec }, alts: [] });
 
@@ -36,4 +36,17 @@ test('sorting uses main character roles, not alternates or assignment labels', (
     alts: [{ class: 'priest', spec: 'holy' }] };
   const tank = member('tank', 'Z Tank', 'warrior', 'protection');
   assert.deepEqual([dps, tank].sort(compareMembersByRoleClass).map((m) => m.id), ['tank', 'dps']);
+});
+
+test('planned raid roles override main roles without changing the main character', () => {
+  const healer = member('healer', 'Healer', 'priest', 'holy');
+  const dps = member('dps', 'DPS', 'warrior', 'arms');
+  const flexTank = { ...dps, raidRole: 'tank' };
+  assert.equal(memberRole(flexTank), 'tank');
+  assert.equal(memberRole(dps), 'dps');
+  assert.equal(flexTank.main.spec, 'arms');
+  assert.deepEqual([healer, flexTank].sort(compareMembersByRoleClass).map(m => m.id), ['dps', 'healer']);
+  assert.equal(memberRole({ ...dps, raidRole: '' }), 'dps');
+  assert.equal(memberRole({ ...dps, raidRole: 'invalid' }), 'dps');
+  assert.equal(memberRole(member('undecided', 'Undecided', 'warrior', '')), null);
 });

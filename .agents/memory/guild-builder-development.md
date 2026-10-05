@@ -27,6 +27,17 @@ the non-Classic names in the signup-page demo.
 examples. Do not rename real members' character names as part of terminology
 cleanup, or remove intentional Forever-specific classes/races/raid content.
 
+Keep raid role choices specific to a setup, separate from the member's main
+signed-up class/spec.
+
+**Why:** The user said some people flex into different positions depending on
+the raid. A planning choice for one raid should not change every other raid or
+rewrite their main character.
+
+**How to apply:** Saved team composition should respect planned role choices;
+the whole-roster view and other setups should still use the signed-up role
+unless they have their own choice.
+
 Good Job is the designated admin test guild.
 
 **Why:** The user stated that Good Job will be used as the admin test guild.
@@ -72,6 +83,24 @@ Guild-key inputs must allow users to view what they entered.
 **How to apply:** Keep Show/Hide key controls available at login and wherever
 the app asks for the current guild key. Mask by default without changing or
 persisting the input value when visibility is toggled.
+
+Invite key viewing may reuse a key entered during sign-in, but only in volatile
+page memory. After a full reload, the user must enter it again.
+
+**Why:** The user reported the Invite Show/Hide control as broken when its field
+was empty. The server stores hashes and cannot recover a plaintext key.
+
+**How to apply:** Preserve entered keys across same-page settings refreshes,
+scope them to the signed-in guild, and never put them in browser storage or cookies.
+
+Retry only idempotent guild-details saves after network interruptions, and check
+actual server state rather than treating a lost response as a rejected write.
+
+**Why:** The user reported faction saves failing to fetch. A response can be lost
+after the write succeeds; duplicate credential rotation or deletion is not safe.
+
+**How to apply:** Keep credential operations out of automatic retries, bind saves
+to the intended guild, and explicitly report when the saved outcome is unconfirmed.
 
 Use plain guild-name slugs without a mandatory random suffix; Good Job's login
 must be `good-job`.

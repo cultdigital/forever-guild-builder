@@ -329,6 +329,7 @@ export const GetSplitSetupsResponse = zod.object({
   "setups": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneNameMax),
+  "memberRoles": zod.record(zod.string(), zod.enum(['tank', 'healer', 'dps'])).optional().describe('Raid-position choices keyed by roster member ID; omitted members use their main roster role.'),
   "teams": zod.array(zod.object({
   "id": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneTeamsItemIdMax),
   "name": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneTeamsItemNameMax),
@@ -361,6 +362,7 @@ export const saveSplitSetupBodyTeamsMax = 10;
 export const SaveSplitSetupBody = zod.object({
   "id": zod.string().optional(),
   "name": zod.string().min(1).max(saveSplitSetupBodyNameMax),
+  "memberRoles": zod.record(zod.string(), zod.enum(['tank', 'healer', 'dps'])).optional().describe('Raid-position choices keyed by roster member ID; omitted members use their main roster role.'),
   "teams": zod.array(zod.object({
   "id": zod.string().min(1).max(saveSplitSetupBodyTeamsItemIdMax),
   "name": zod.string().min(1).max(saveSplitSetupBodyTeamsItemNameMax),
@@ -385,6 +387,7 @@ export const SaveSplitSetupResponse = zod.object({
   "setup": zod.object({
   "id": zod.string(),
   "name": zod.string().min(1).max(saveSplitSetupResponseSetupOneNameMax),
+  "memberRoles": zod.record(zod.string(), zod.enum(['tank', 'healer', 'dps'])).optional().describe('Raid-position choices keyed by roster member ID; omitted members use their main roster role.'),
   "teams": zod.array(zod.object({
   "id": zod.string().min(1).max(saveSplitSetupResponseSetupOneTeamsItemIdMax),
   "name": zod.string().min(1).max(saveSplitSetupResponseSetupOneTeamsItemNameMax),

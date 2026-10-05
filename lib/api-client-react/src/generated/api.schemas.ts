@@ -129,6 +129,11 @@ export interface SplitTeam {
   memberIds: string[];
 }
 
+/**
+ * Raid-position choices keyed by roster member ID; omitted members use their main roster role.
+ */
+export interface SplitMemberRoles {[key: string]: 'tank' | 'healer' | 'dps'}
+
 export interface SplitInput {
   id?: string;
   /**
@@ -136,6 +141,7 @@ export interface SplitInput {
      * @maxLength 60
      */
   name: string;
+  memberRoles?: SplitMemberRoles;
   /**
      * @minItems 1
      * @maxItems 10

@@ -82,6 +82,20 @@ if (!process.argv[2]) {
     assert.equal(JSON.stringify(await store.getAll()), before, 'Saving splits changed the roster');
     assert.equal((await call('GET')).json.setups.length, 5);
     assert.equal((await call('POST', { name: saved.name, teams: saved.teams })).status, 409);
+    saved.memberRoles = { [memberId]: 'healer' };
+    assert.equal((await call('POST', saved)).status, 200);
+    assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).memberRoles, saved.memberRoles);
+    assert.equal(JSON.stringify(await store.getAll()), before, 'Raid role choices changed the main roster');
+    for (const memberRoles of [null, [], { [memberId]: 'warden' }, { 'other-guild-member': 'tank' }]) {
+      assert.equal((await call('POST', { ...saved, memberRoles })).status, 400);
+    }
+    const olderClient = { ...saved };
+    delete olderClient.memberRoles;
+    assert.deepEqual((await call('POST', olderClient)).json.setup.memberRoles, saved.memberRoles, 'Older clients erased saved raid roles');
+    const otherSetup = (await call('GET')).json.setups.find(s => s.id !== saved.id);
+    assert.deepEqual(otherSetup.memberRoles, {}, 'Role choices leaked into another setup');
+    assert.deepEqual((await call('POST', { ...saved, memberRoles: {} })).json.setup.memberRoles, {});
+    assert.equal((await call('POST', saved)).status, 200);
     const duplicate = structuredClone(saved);
     duplicate.teams[1].memberIds = [memberId];
     assert.equal((await call('POST', duplicate)).status, 400);
@@ -104,6 +118,7 @@ if (!process.argv[2]) {
     assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).teams[1].memberIds, [memberId]);
     await store.remove(memberId);
     assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).teams[1].memberIds, []);
+    assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).memberRoles, {});
     assert.equal((await call('DELETE', undefined, { id: saved.id })).status, 200);
     assert.equal((await call('POST', saved)).status, 404);
     // Fill an isolated store to the limit, preserving valid existing seed entries.

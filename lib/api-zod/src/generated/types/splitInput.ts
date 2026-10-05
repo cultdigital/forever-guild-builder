@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SplitMemberRoles } from './splitMemberRoles';
 import type { SplitTeam } from './splitTeam';
 
 export interface SplitInput {
@@ -14,6 +15,7 @@ export interface SplitInput {
      * @maxLength 60
      */
   name: string;
+  memberRoles?: SplitMemberRoles;
   /**
      * @minItems 1
      * @maxItems 10

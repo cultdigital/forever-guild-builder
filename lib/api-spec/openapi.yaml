@@ -464,12 +464,21 @@ components:
           maxItems: 40
           uniqueItems: true
           items: { type: string }
+    SplitMemberRoles:
+      type: object
+      maxProperties: 100
+      description: Raid-position choices keyed by roster member ID; omitted members use their main roster role.
+      additionalProperties:
+        type: string
+        enum: [tank, healer, dps]
     SplitInput:
       type: object
       required: [name, teams]
       properties:
         id: { type: string }
         name: { type: string, minLength: 1, maxLength: 60 }
+        memberRoles:
+          $ref: "#/components/schemas/SplitMemberRoles"
         teams:
           type: array
           minItems: 1
