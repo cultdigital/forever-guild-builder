@@ -538,3 +538,34 @@ h1.guild-tag {
 .plate-line.main-line { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
 .main-line .pl-item { min-width: 0; }
 .main-line .pl-spec { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- split setups ---------- */
+.scope-bar { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.sp-scope-label { margin-left: 10px; }
+select { background: #0e0907; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--text); font: inherit; font-size: 14px; max-width: 100%; }
+select:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(224, 180, 90, 0.2); }
+select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sp-cap { font: 800 14px/1 var(--head); color: var(--gold-2); padding: 5px 10px; border: 1px solid var(--gold-dim); border-radius: 12px; }
+.sp-cap.full { color: var(--bad); border-color: var(--bad); }
+.sp-banner { margin: 8px 0 0; padding: 9px 12px; border-radius: 8px; border-left: 3px solid var(--warn); background: rgba(0, 0, 0, 0.3); font-weight: 600; }
+.sp-banner.bad { border-left-color: var(--bad); color: #ffb3ab; }
+.sp-banner.warn { color: var(--gold-2); }
+.sp-list { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 8px; }
+.sp-card { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line-soft); background: rgba(0, 0, 0, 0.25); }
+.sp-card.on { border-color: var(--gold-dim); }
+.sp-actions, .sp-presets { display: flex; gap: 8px; flex-wrap: wrap; }
+.sp-dirty { font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); }
+.sp-fields { max-width: 360px; }
+.sp-totals { color: var(--muted); font-size: 14px; margin: 10px 0 14px; }
+.sp-teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.sp-team { border: 1px solid var(--line); border-top: 3px solid var(--gold-dim); border-radius: var(--radius); padding: 10px 12px; background: rgba(0, 0, 0, 0.22); --rc: var(--gold); }
+.sp-team.full { border-top-color: var(--good); }
+.sp-team header { display: flex; gap: 6px; align-items: center; }
+.sp-team header input { padding: 6px 8px; min-width: 0; flex: 1; }
+.sp-team header .x { margin-left: 0; font-size: 13px; }
+.sp-count { font: 800 13px/1 var(--head); color: var(--gold-2); margin: 8px 0 5px; }
+.sp-members { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.sp-member { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.03); }
+.sp-member select { padding: 3px 6px; font-size: 13px; }
+.sp-pool { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }

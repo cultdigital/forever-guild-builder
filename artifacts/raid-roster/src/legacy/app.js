@@ -2,6 +2,7 @@ import {
   GUILD_NAME, ROLES, RACES, CLASSES, PURE_DPS, WILLINGNESS, RAID_SIZES, MAX_ALTS, ASSIGNMENTS, PROFESSIONS, MAX_PRIMARY_PROFS,
   getSpec, roleOf, iconUrl,
 } from '@workspace/roster/data';
+import { createSplits } from './split-controls.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const ROLE_ORDER = ['tank', 'healer', 'dps'];
@@ -38,10 +39,21 @@ function charIcons(c, size = '') {
   return icon(`classicon_${c.class}`, size, CLASSES[c.class].label) + (s ? icon(s.icon, size, s.label) : '');
 }
 
+let scopeTarget = '';
+const splits = createSplits({
+  getMembers: () => members, api, toast, esc, nameChip,
+  onScopeChange: (team, quiet) => {
+    const key = team ? `${team.id}:${team.size}` : '';
+    if (team && (!quiet || key !== scopeTarget) && RAID_SIZES[String(team.size)]) raidSize = String(team.size);
+    scopeTarget = key;
+    renderComp();
+  },
+});
+
 // ---------- API ----------
-async function api(method, { body, query = '' } = {}) {
+async function api(method, { body, query = '', path = '' } = {}) {
   const headers = { 'Content-Type': 'application/json' };
-  const res = await fetch(`/api/roster${query}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const res = await fetch(`/api/roster${path}${query}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
   const data = await res.json().catch(() => ({ error: 'Unexpected response' }));
   if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status });
   return data;
@@ -58,11 +70,12 @@ async function load() {
     return;
   }
   renderAll();
+  splits.load();
 }
 
 // ---------- composition maths ----------
-function analyse() {
-  const total = members.length;
+function analyse(list = members) {
+  const total = list.length;
   const byRole = { tank: [], healer: [], dps: [], none: [] };
   const flex = { tank: [], healer: [], dps: [] };
   const cls = {};
@@ -72,7 +85,7 @@ function analyse() {
   }
   const races = {};
 
-  for (const m of members) {
+  for (const m of list) {
     const r = roleOf(m.main.class, m.main.spec);
     byRole[r || 'none'].push(m);
     const C = cls[m.main.class];
@@ -114,11 +127,12 @@ function renderHeader(A) {
 
 // ---------- composition tab ----------
 function assignLine() {
-  const who = (k) => members.filter((m) => m.assignment === k);
+  const who = (k) => splits.scopeMembers().filter((m) => m.assignment === k);
   return `<div class="rc-assign">${['mt', 'ot', 'flex'].map((k) => `<span><span class="asg asg-${k}">${ASSIGNMENTS[k].short}</span> ${who(k).length ? who(k).map(nameChip).join(', ') : '<span class="muted">unassigned</span>'}</span>`).join('')}</div>`;
 }
 
-function renderComp(A) {
+function renderComp() {
+  const A = analyse(splits.scopeMembers());
   const target = RAID_SIZES[raidSize];
 
   $('#raid-size').innerHTML = Object.entries(RAID_SIZES).map(([k, v]) =>
@@ -155,17 +169,18 @@ function renderComp(A) {
   }).join('');
   const gc = Object.fromEntries(Object.entries(A.byRole).map(([k, v]) => [k, v.length]));
   $('#role-bar').innerHTML = `
-    <div class="bar-row"><span class="bar-label">Guild</span><div class="bar">${seg(gc, A.total) || '<span class="seg-none" style="flex:1">No sign-ups yet</span>'}</div></div>
+    <div class="bar-row"><span class="bar-label">${esc(splits.scopeTeam()?.name || 'Guild')}</span><div class="bar">${seg(gc, A.total) || '<span class="seg-none" style="flex:1">No members assigned</span>'}</div></div>
     <div class="bar-row"><span class="bar-label">${raidSize}-man target</span><div class="bar target">${seg({ tank: target.tank, healer: target.healer, dps: target.dps }, Number(raidSize))}</div></div>`;
   $('#role-legend').innerHTML = ROLE_ORDER.map((r) => `<span><i class="sw seg-${r}"></i>${ROLES[r].label} ${pct(gc[r], A.total)}% <span class="muted">(target ${pct(target[r], Number(raidSize))}%)</span></span>`).join('') +
     (gc.none ? `<span><i class="sw seg-none"></i>Undecided ${pct(gc.none, A.total)}%</span>` : '');
 
-  renderTankFrames(A);
+  renderTankFrames();
   renderInsights(A, target);
   renderClassGrid(A);
   renderUtility(A);
   renderRaces(A);
   renderProfessions();
+  splits.renderScopeBar();
 }
 
 function renderInsights(A, target) {
@@ -218,7 +233,7 @@ function renderInsights(A, target) {
   const undecided = A.byRole.none;
   if (undecided.length) add('info', `<b>${plural(undecided.length, 'hybrid')} without a spec:</b> ${undecided.map((m) => `${nameChip(m)} <span class="muted">(${CLASSES[m.main.class].label})</span>`).join(', ')}. Their role isn't counted until they choose.`);
 
-  const noAlts = members.filter((m) => !m.alts?.length).length;
+  const noAlts = splits.scopeMembers().filter((m) => !m.alts?.length).length;
   if (noAlts) add('info', `<b>${noAlts} of ${A.total}</b> haven't listed any alternates — flex options above may be understated.`);
 
   if (!items.some((i) => i.sev === 'gap')) add('ok', `<b>Core roles covered</b> for a ${raidSize}-man and every class is represented.`);
@@ -277,8 +292,9 @@ function renderRaces(A) {
 }
 
 function renderProfessions() {
+  const scoped = splits.scopeMembers();
   $('#professions').innerHTML = Object.entries(PROFESSIONS).map(([k, p]) => {
-    const who = members.filter((m) => (m.professions || []).includes(k));
+    const who = scoped.filter((m) => (m.professions || []).includes(k));
     return `<div class="prof-card ${who.length ? '' : 'empty-prof'}">
       <div class="prof-top">${icon(p.icon, 'sm', p.label)}<b>${p.label}</b>${p.primary ? '' : '<span class="muted">secondary</span>'}<span class="prof-count">${who.length}</span></div>
       <div class="prof-names">${who.length ? who.map((m) => `<button type="button" class="nm nm-btn" data-pen="prof" data-id="${esc(m.id)}" style="--c:${classColor(m.main.class)}">${esc(m.name)}</button>`).join('') : '<span class="muted">Nobody yet</span>'}</div>
@@ -324,7 +340,7 @@ function plate(m) {
 }
 
 function renderTankFrames() {
-  const tanks = members.filter((m) => roleOf(m.main.class, m.main.spec) === 'tank' || ['mt', 'ot', 'flex'].includes(m.assignment)).sort(plateSort);
+  const tanks = splits.scopeMembers().filter((m) => roleOf(m.main.class, m.main.spec) === 'tank' || ['mt', 'ot', 'flex'].includes(m.assignment)).sort(plateSort);
   $('#tank-frames').innerHTML = tanks.length ? tanks.map(plate).join('') : '<p class="empty">No tanks yet.</p>';
 }
 
@@ -470,6 +486,10 @@ function renderForm() {
   $('#form-title').hidden = !f.editingId;
   $('#submit-btn').textContent = f.editingId ? 'Save changes' : 'Sign up';
   $('#cancel-edit').hidden = !f.editingId;
+  const full = !f.editingId && members.length >= splits.MAX_ROSTER;
+  $('#submit-btn').disabled = full;
+  if (full) setMsg(`Roster full (${splits.MAX_ROSTER}/${splits.MAX_ROSTER}) - new sign-ups are closed. Editing and removing still work.`, 'error');
+  else if ($('#form-msg').dataset.kind === 'error' && $('#form-msg').textContent.startsWith('Roster full')) setMsg('', '');
   $('#delete-btn').hidden = !f.editingId;
 
   $('#main-class').innerHTML = classTiles(f.main.class, 'data-main-class');
@@ -542,6 +562,7 @@ async function submit(e) {
   const keys = [keyOf(form.main), ...form.alts.map(keyOf)];
   if (new Set(keys).size !== keys.length) return setMsg('You have the same class/spec listed twice.', 'error');
 
+  if (!form.editingId && members.length >= splits.MAX_ROSTER) return setMsg(`The roster is full (${splits.MAX_ROSTER}/${splits.MAX_ROSTER}). Remove someone before signing up.`, 'error');
   const btn = $('#submit-btn');
   btn.disabled = true;
   try {
@@ -598,7 +619,7 @@ function exportCsv() {
 // ---------- tabs ----------
 function showTab() {
   let tab = location.hash.slice(1);
-  if (!['signup', 'comp', 'roster'].includes(tab)) tab = 'signup';
+  if (!['signup', 'comp', 'roster', 'splits'].includes(tab)) tab = 'signup';
   for (const p of document.querySelectorAll('.tab-panel')) p.hidden = p.id !== `tab-${tab}`;
   for (const a of document.querySelectorAll('.tabs a')) a.setAttribute('aria-selected', a.dataset.tab === tab);
 }
@@ -607,9 +628,10 @@ function renderAll() {
   $('#tooltip').hidden = true;
   const A = analyse();
   renderHeader(A);
-  renderComp(A);
+  renderComp();
   renderRoster();
   renderForm();
+  splits.render();
   showTab();
 }
 
@@ -670,7 +692,7 @@ document.addEventListener('click', (e) => {
   if (t.id === 'delete-btn') return removeEntry();
   if (d.edit) return startEdit(d.edit);
 
-  if (d.size) { raidSize = d.size; return renderComp(analyse()); }
+  if (d.size) { raidSize = d.size; return renderComp(); }
   if (d.role) { filters.role = d.role; return renderRoster(); }
   if (d.cls) { filters.cls = filters.cls === d.cls ? null : d.cls; return renderRoster(); }
   if (t.id === 'export-csv') return exportCsv();
@@ -690,7 +712,13 @@ $('#f-name').addEventListener('input', (e) => {
 });
 $('#f-notes').addEventListener('input', (e) => { form.notes = e.target.value; });
 $('#search').addEventListener('input', (e) => { filters.q = e.target.value; renderRoster(); });
-window.addEventListener('hashchange', () => { closePop(); showTab(); });
+let lastTab = location.hash.slice(1);
+window.addEventListener('hashchange', () => {
+  const next = location.hash.slice(1);
+  if (lastTab === 'splits' && next !== 'splits' && !splits.confirmDiscard()) { location.hash = '#splits'; return; }
+  lastTab = next;
+  closePop(); showTab();
+});
 document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
 
 // Tooltips

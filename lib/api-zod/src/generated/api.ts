@@ -118,6 +118,106 @@ export const DeleteRosterMemberResponse = zod.object({
 
 
 /**
+ * @summary List saved raid split setups
+ */
+export const getSplitSetupsResponseSetupsItemOneNameMax = 60;
+
+export const getSplitSetupsResponseSetupsItemOneTeamsItemIdMax = 64;
+
+export const getSplitSetupsResponseSetupsItemOneTeamsItemNameMax = 40;
+
+export const getSplitSetupsResponseSetupsItemOneTeamsItemMemberIdsMax = 40;
+
+export const getSplitSetupsResponseSetupsItemOneTeamsMax = 10;
+
+
+
+export const GetSplitSetupsResponse = zod.object({
+  "setups": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneNameMax),
+  "teams": zod.array(zod.object({
+  "id": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneTeamsItemIdMax),
+  "name": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneTeamsItemNameMax),
+  "size": zod.union([zod.literal(10),zod.literal(20),zod.literal(40)]),
+  "memberIds": zod.array(zod.string()).max(getSplitSetupsResponseSetupsItemOneTeamsItemMemberIdsMax)
+})).min(1).max(getSplitSetupsResponseSetupsItemOneTeamsMax)
+}).and(zod.object({
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))),
+  "storage": zod.enum(['local', 'redis', 'missing'])
+})
+
+
+/**
+ * @summary Create a setup or replace the setup identified by id
+ */
+export const saveSplitSetupBodyNameMax = 60;
+
+export const saveSplitSetupBodyTeamsItemIdMax = 64;
+
+export const saveSplitSetupBodyTeamsItemNameMax = 40;
+
+export const saveSplitSetupBodyTeamsItemMemberIdsMax = 40;
+
+export const saveSplitSetupBodyTeamsMax = 10;
+
+
+
+export const SaveSplitSetupBody = zod.object({
+  "id": zod.string().optional(),
+  "name": zod.string().min(1).max(saveSplitSetupBodyNameMax),
+  "teams": zod.array(zod.object({
+  "id": zod.string().min(1).max(saveSplitSetupBodyTeamsItemIdMax),
+  "name": zod.string().min(1).max(saveSplitSetupBodyTeamsItemNameMax),
+  "size": zod.union([zod.literal(10),zod.literal(20),zod.literal(40)]),
+  "memberIds": zod.array(zod.string()).max(saveSplitSetupBodyTeamsItemMemberIdsMax)
+})).min(1).max(saveSplitSetupBodyTeamsMax)
+})
+
+export const saveSplitSetupResponseSetupOneNameMax = 60;
+
+export const saveSplitSetupResponseSetupOneTeamsItemIdMax = 64;
+
+export const saveSplitSetupResponseSetupOneTeamsItemNameMax = 40;
+
+export const saveSplitSetupResponseSetupOneTeamsItemMemberIdsMax = 40;
+
+export const saveSplitSetupResponseSetupOneTeamsMax = 10;
+
+
+
+export const SaveSplitSetupResponse = zod.object({
+  "setup": zod.object({
+  "id": zod.string(),
+  "name": zod.string().min(1).max(saveSplitSetupResponseSetupOneNameMax),
+  "teams": zod.array(zod.object({
+  "id": zod.string().min(1).max(saveSplitSetupResponseSetupOneTeamsItemIdMax),
+  "name": zod.string().min(1).max(saveSplitSetupResponseSetupOneTeamsItemNameMax),
+  "size": zod.union([zod.literal(10),zod.literal(20),zod.literal(40)]),
+  "memberIds": zod.array(zod.string()).max(saveSplitSetupResponseSetupOneTeamsItemMemberIdsMax)
+})).min(1).max(saveSplitSetupResponseSetupOneTeamsMax)
+}).and(zod.object({
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Remove a saved setup without changing the roster
+ */
+export const DeleteSplitSetupQueryParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteSplitSetupResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */

@@ -5,6 +5,53 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type SplitTeamSize = typeof SplitTeamSize[keyof typeof SplitTeamSize];
+
+
+export const SplitTeamSize = {
+  NUMBER_10: 10,
+  NUMBER_20: 20,
+  NUMBER_40: 40,
+} as const;
+
+export interface SplitTeam {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  name: string;
+  size: SplitTeamSize;
+  /** @maxItems 40 */
+  memberIds: string[];
+}
+
+export interface SplitInput {
+  id?: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  name: string;
+  /**
+     * @minItems 1
+     * @maxItems 10
+     */
+  teams: SplitTeam[];
+}
+
+export type SplitSetup = SplitInput & {
+  createdAt: string;
+  updatedAt: string;
+} & Required<Pick<SplitInput & {
+  createdAt: string;
+  updatedAt: string;
+}, 'id'>>;
+
 export interface RosterCharacter {
   class?: string;
   /** @nullable */
@@ -62,6 +109,32 @@ id: string;
 };
 
 export type DeleteRosterMember200 = {
+  ok: boolean;
+};
+
+export type GetSplitSetups200Storage = typeof GetSplitSetups200Storage[keyof typeof GetSplitSetups200Storage];
+
+
+export const GetSplitSetups200Storage = {
+  local: 'local',
+  redis: 'redis',
+  missing: 'missing',
+} as const;
+
+export type GetSplitSetups200 = {
+  setups: SplitSetup[];
+  storage: GetSplitSetups200Storage;
+};
+
+export type SaveSplitSetup200 = {
+  setup: SplitSetup;
+};
+
+export type DeleteSplitSetupParams = {
+id: string;
+};
+
+export type DeleteSplitSetup200 = {
   ok: boolean;
 };
 

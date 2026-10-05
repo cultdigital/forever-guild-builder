@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./data": "./src/data.js",
-    "./server": "./src/handler.js"
+    "./server": "./src/handler.js",
+    "./splits": "./src/split-handler.js"
   }
 }

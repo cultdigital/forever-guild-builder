@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test:roster": "node ./src/test-roster.mjs",
+    "test:splits-api": "node ./src/test-splits-api.mjs",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

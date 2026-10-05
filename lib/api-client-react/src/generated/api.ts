@@ -22,10 +22,15 @@ import type {
 import type {
   DeleteRosterMember200,
   DeleteRosterMemberParams,
+  DeleteSplitSetup200,
+  DeleteSplitSetupParams,
   GetRoster200,
+  GetSplitSetups200,
   HealthStatus,
   RosterInput,
-  SaveRosterMember200
+  SaveRosterMember200,
+  SaveSplitSetup200,
+  SplitInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -299,6 +304,252 @@ export const useDeleteRosterMember = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteRosterMemberMutationOptions(options));
+    }
+
+export const getGetSplitSetupsUrl = () => {
+
+
+
+
+  return `/api/roster/splits`
+}
+
+/**
+ * @summary List saved raid split setups
+ */
+export const getSplitSetups = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetSplitSetups200> => {
+
+  return customFetch<GetSplitSetups200>(getGetSplitSetupsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSplitSetupsQueryKey = () => {
+    return [
+    `/api/roster/splits`
+    ] as const;
+    }
+
+
+export const getGetSplitSetupsQueryOptions = <TData = Awaited<ReturnType<typeof getSplitSetups>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSplitSetups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSplitSetupsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSplitSetups>>> = ({ signal }) => getSplitSetups({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSplitSetups>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSplitSetupsQueryResult = NonNullable<Awaited<ReturnType<typeof getSplitSetups>>>
+export type GetSplitSetupsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List saved raid split setups
+ */
+
+export function useGetSplitSetups<TData = Awaited<ReturnType<typeof getSplitSetups>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSplitSetups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSplitSetupsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveSplitSetupUrl = () => {
+
+
+
+
+  return `/api/roster/splits`
+}
+
+/**
+ * @summary Create a setup or replace the setup identified by id
+ */
+export const saveSplitSetup = async (splitInput: SplitInput, options?: Parameters<typeof customFetch>[1]): Promise<SaveSplitSetup200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SaveSplitSetup200>(getSaveSplitSetupUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(splitInput)
+  }
+);}
+
+
+
+
+
+export const getSaveSplitSetupMutationKey = () => ['saveSplitSetup'] as const;
+
+export const getSaveSplitSetupMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveSplitSetup>>, TError,SaveSplitSetupMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveSplitSetup>>, TError,SaveSplitSetupMutationVariables, TContext> => {
+
+const mutationKey = getSaveSplitSetupMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveSplitSetup>>, SaveSplitSetupMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveSplitSetup(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveSplitSetupMutationResult = NonNullable<Awaited<ReturnType<typeof saveSplitSetup>>>
+    export type SaveSplitSetupMutationBody = BodyType<SplitInput>
+    export type SaveSplitSetupMutationError = ErrorType<void>
+    export type SaveSplitSetupMutationVariables = {data: BodyType<SplitInput>}
+
+    /**
+ * @summary Create a setup or replace the setup identified by id
+ */
+export const useSaveSplitSetup = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveSplitSetup>>, TError,SaveSplitSetupMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveSplitSetup>>,
+        TError,
+        SaveSplitSetupMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveSplitSetupMutationOptions(options));
+    }
+
+export const getDeleteSplitSetupUrl = (params: DeleteSplitSetupParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/roster/splits?${stringifiedParams}` : `/api/roster/splits`
+}
+
+/**
+ * @summary Remove a saved setup without changing the roster
+ */
+export const deleteSplitSetup = async (params: DeleteSplitSetupParams, options?: Parameters<typeof customFetch>[1]): Promise<DeleteSplitSetup200> => {
+
+  return customFetch<DeleteSplitSetup200>(getDeleteSplitSetupUrl(params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSplitSetupMutationKey = () => ['deleteSplitSetup'] as const;
+
+export const getDeleteSplitSetupMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSplitSetup>>, TError,DeleteSplitSetupMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSplitSetup>>, TError,DeleteSplitSetupMutationVariables, TContext> => {
+
+const mutationKey = getDeleteSplitSetupMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSplitSetup>>, DeleteSplitSetupMutationVariables> = (props) => {
+          const {params} = props ?? {};
+
+          return  deleteSplitSetup(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSplitSetupMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSplitSetup>>>
+
+    export type DeleteSplitSetupMutationError = ErrorType<void>
+    export type DeleteSplitSetupMutationVariables = {params: DeleteSplitSetupParams}
+
+    /**
+ * @summary Remove a saved setup without changing the roster
+ */
+export const useDeleteSplitSetup = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSplitSetup>>, TError,DeleteSplitSetupMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSplitSetup>>,
+        TError,
+        DeleteSplitSetupMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteSplitSetupMutationOptions(options));
     }
 
 export const getHealthCheckUrl = () => {

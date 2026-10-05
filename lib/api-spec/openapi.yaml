@@ -57,6 +57,8 @@ paths:
           description: Member was removed
         "409":
           description: Duplicate name
+        "403":
+          description: Roster has reached its 100-member limit
         "503":
           description: Published storage is not connected
     delete:
@@ -83,6 +85,77 @@ paths:
           description: Member was already removed
         "503":
           description: Published storage is not connected
+  /roster/splits:
+    get:
+      operationId: getSplitSetups
+      summary: List saved raid split setups
+      responses:
+        "200":
+          description: Saved setups and storage status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [setups, storage]
+                properties:
+                  setups:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SplitSetup"
+                  storage:
+                    type: string
+                    enum: [local, redis, missing]
+    post:
+      operationId: saveSplitSetup
+      summary: Create a setup or replace the setup identified by id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SplitInput"
+      responses:
+        "200":
+          description: Saved setup
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [setup]
+                properties:
+                  setup:
+                    $ref: "#/components/schemas/SplitSetup"
+        "400":
+          description: Invalid teams or assignments
+        "404":
+          description: Setup no longer exists
+        "409":
+          description: Setup name already exists
+        "503":
+          description: Storage is not connected
+    delete:
+      operationId: deleteSplitSetup
+      summary: Remove a saved setup without changing the roster
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean }
+        "404":
+          description: Setup no longer exists
+        "503":
+          description: Storage is not connected
   /healthz:
     get:
       operationId: healthCheck
@@ -98,6 +171,38 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    SplitTeam:
+      type: object
+      required: [id, name, size, memberIds]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 64 }
+        name: { type: string, minLength: 1, maxLength: 40 }
+        size: { type: integer, enum: [10, 20, 40] }
+        memberIds:
+          type: array
+          maxItems: 40
+          uniqueItems: true
+          items: { type: string }
+    SplitInput:
+      type: object
+      required: [name, teams]
+      properties:
+        id: { type: string }
+        name: { type: string, minLength: 1, maxLength: 60 }
+        teams:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/SplitTeam"
+    SplitSetup:
+      allOf:
+        - $ref: "#/components/schemas/SplitInput"
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            createdAt: { type: string }
+            updatedAt: { type: string }
     RosterCharacter:
       type: object
       properties:
