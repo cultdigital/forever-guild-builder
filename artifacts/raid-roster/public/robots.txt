@@ -1,2 +1,6 @@
 User-agent: *
 Allow: /
+
+# /g/ responses have X-Robots-Tag: noindex and HTML robots meta tags.
+# Allow crawling so search engines can read those directives and remove URLs.
+# Disallowing /g/ here could leave linked URLs indexed without fetching noindex.

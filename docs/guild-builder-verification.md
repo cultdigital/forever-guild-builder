@@ -7,12 +7,16 @@ were explicitly deferred; no bot-protection bypass was introduced.
 
 ## Completed checks
 
-- 36 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
+- 37 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
   credential hashing, session signing/revocation, creation and login throttling,
   write/read limits, capacity, settings, rotation, recovery, deletion, faction
   validation, expiry, stale-write rejection and idempotent migration.
 - Readable-slug checks cover collision rejection, alias lookup and expiry,
   deletion of aliases, and preservation of credentials and records during URL changes.
+- All `/g/` responses include `X-Robots-Tag: noindex` and guild HTML includes
+  a server-rendered robots meta tag. HTTP checks cover aliases, nested paths,
+  encoded paths, errors and HEAD responses; public pages remain indexable.
+  Crawling is allowed in robots.txt so crawlers can see the noindex directives.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,

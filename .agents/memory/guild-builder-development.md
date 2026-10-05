@@ -52,3 +52,20 @@ planning, considers name sniping unlikely, and explicitly requested `good-job`.
 **How to apply:** Prefer readable name-based URLs. Reject an occupied slug with
 a clear request for a different name instead of silently appending a hash.
 Preserve old invite links as aliases when changing an existing guild URL.
+
+Everything under `/g/` must be non-indexable.
+
+**Why:** The user explicitly requested this for all guild URLs, not only Good Job.
+
+**How to apply:** Preserve this requirement for login pages, guild pages, aliases,
+and any future pages or resources added under `/g/`; keep public pages outside
+that section separate.
+
+Do not infer application indexing rules from preview-domain robots headers alone.
+
+**Why:** Preview-domain responses contained extra site-wide `noindex` directives,
+including on `/`, while direct application checks and the published homepage
+did not. Those extra headers can obscure whether the app's own rule is scoped.
+
+**How to apply:** Use isolated HTTP checks or direct application responses to
+verify public-page exclusions, and the published domain to confirm deployment.

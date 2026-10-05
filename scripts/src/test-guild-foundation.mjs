@@ -230,6 +230,38 @@ test('new multi-guild creation stays closed without bot-protection setup', async
   assert.equal((await api({ req: { ...req, method: 'GET' }, pathname: '/api/config' })).json.creationEnabled, false);
 });
 
+test('all guild URLs are non-indexable without blocking indexing of public pages', async (t) => {
+  const server = createGuildHttpServer({ env: { NODE_ENV: 'production' }, api: async () => ({ status: 200, json: {} }) });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  for (const pathname of ['/g', '/g/', '/g/good-job', '/g/good-job/', '/g/good-job?view=composition',
+    '/g/good-job-0cba3d', '/g/unknown-guild', '/g/good-job/splits', '/g/good-job/asset.png',
+    '/%67/good-job', '/g%2Fgood-job', '/g/%invalid']) {
+    const res = await fetch(base + pathname);
+    assert.equal(res.headers.get('x-robots-tag'), 'noindex, nofollow, noarchive, nosnippet, noimageindex', pathname);
+    const body = await res.text();
+    if (res.headers.get('content-type')?.startsWith('text/html')) {
+      assert.match(body, /<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">/, pathname);
+      assert.ok(body.indexOf('name="robots"') < body.indexOf('</head>'), pathname);
+    }
+  }
+  for (const method of ['HEAD', 'POST']) {
+    const res = await fetch(base + '/g/good-job', { method });
+    assert.match(res.headers.get('x-robots-tag'), /\bnoindex\b/);
+    assert.equal(res.status, method === 'HEAD' ? 200 : 405);
+    if (method === 'HEAD') assert.equal(await res.text(), '');
+  }
+  for (const pathname of ['/', '/privacy', '/gossip']) {
+    const res = await fetch(base + pathname);
+    assert.equal(res.headers.get('x-robots-tag'), null, pathname);
+    assert.doesNotMatch(await res.text(), /name="robots" content="noindex/);
+  }
+  const robots = await (await fetch(base + '/robots.txt')).text();
+  assert.match(robots, /^Allow: \/$/m);
+  assert.doesNotMatch(robots, /^Disallow: \/g/m);
+});
+
 test('HTTP enforces same origin, JSON, streamed 8 KB limit and production framing', async (t) => {
   const server = createGuildHttpServer({ env: {}, api: async () => ({ status: 200, json: { ok: true } }) });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
