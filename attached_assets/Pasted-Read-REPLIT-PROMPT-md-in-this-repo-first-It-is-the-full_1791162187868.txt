@@ -1,0 +1,59 @@
+Read REPLIT_PROMPT.md in this repo first. It is the full spec for this task. Read README.md and the existing code too, then build v1 of "Forever Guild Builder": a public, multi-guild WoW: Forever raid roster app for Horde AND Alliance, to be hosted at foreverguildbuilder.com.
+
+This repo is a working single-guild app (my guild <Good Job>). Extend it; do not rewrite it. Keep it lightweight:
+- vanilla JS front end, no framework, no build step
+- dev-server.js as the Node server (npm start)
+- Upstash Redis REST via fetch as the only data store
+- no new npm dependencies unless truly necessary
+
+Decisions already made:
+- Guild sign-up: guild name and faction (Horde/Alliance), protected by Cloudflare Turnstile. The server generates:
+  - a private guild URL with a random suffix (/g/<slug>)
+  - ONE shared guild key (random 4-word passphrase)
+  - a recovery code
+  Show the key and recovery code once, with copy and download buttons. Store both hashed with crypto.scrypt and a per-guild salt.
+- Access: one shared key per guild (anyone with it can view/add/edit/delete). Structure the code so an officer role and Discord login can be added later; don't build those now.
+- Invite link: /g/<slug>#k=<key>. The key stays in the URL fragment and is never sent to the server. Strip it from the address bar after login.
+- Sessions: HMAC-signed cookie (SESSION_SECRET) holding guildId, keyVersion and a 30-day expiry. Flags: HttpOnly, Secure, SameSite=Lax. Rotating the key bumps keyVersion and logs everyone out.
+- Guild settings: rename, change faction (warn if existing races become invalid), copy invite link, rotate key, recover with recovery code, export CSV, delete guild (with typed confirmation).
+- No public guild directory.
+- Ko-fi link in the footer on every page: "☕ Support Forever Guild Builder" → https://ko-fi.com/cultdigital. Add one dismissible prompt after a guild passes 20 members, stored server-side. Never lock features behind donations.
+- Footer: "Not affiliated with Blizzard Entertainment". Add a short privacy page (no emails or personal data stored).
+
+Security, must-have:
+- Tenant isolation: every API route gets guildId ONLY from the verified session cookie, never from the body, query or URL. Namespace Redis keys per guild.
+- Writes: check the Origin header and require JSON content-type. Reject bodies over 8KB.
+- Headers on every response: CSP, nosniff, Referrer-Policy no-referrer, frame-ancestors 'none'.
+- Keep the existing server-side validation and HTML escaping. Race/class validation must use the guild's faction.
+
+Abuse limits (Redis INCR + EXPIRE counters, HTTP 429 with a friendly message):
+- guild creation: 3 per IP per day
+- login/recovery: 5 per minute and 20 per hour, per IP and per guild
+- writes: 60 per minute per guild
+- reads: 300 per minute per IP
+- 100 members per guild
+- global guild cap from env MAX_GUILDS (default 5000) that pauses new sign-ups only
+- inactive guilds expire after 180 days (refresh the expiry on each write)
+
+Alliance:
+- Make data.js faction-aware, using the race/class table in REPLIT_PROMPT.md. Skyborne gets Shaman on Horde and Mage on Alliance.
+- Alliance theme: blue/silver/gold. Horde keeps the current red/gold.
+- Download the Alliance race icons into public/icons/ (names and CDN listed in the spec); don't hotlink.
+
+Pages:
+- "/" landing page: what it does, "Create a guild", "Open my guild" (paste an invite link or slug, then enter the key), and the Ko-fi link.
+- "/g/<slug>": the existing three tabs (Sign Up, Composition, Roster) plus Guild settings.
+
+Migration: create <Good Job> (Horde) as the first guild, importing the existing roster:v1 Redis hash (fall back to lib/seed.js). Print its new key and recovery code to the console once.
+
+Secrets I'm providing: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, SESSION_SECRET, TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, and optionally MAX_GUILDS. Tell me if any are missing before you rely on them.
+
+Work in this order and show me each stage working before the next:
+1. multi-guild data model, sessions and the guild pages
+2. guild creation, keys, invite links and settings
+3. security headers and abuse limits
+4. Alliance data and theme
+5. landing page, Ko-fi, privacy page
+6. Good Job migration
+
+Finish by running the acceptance checks at the end of REPLIT_PROMPT.md and reporting each as pass or fail. Don't change the existing look of the roster/nameplates beyond what faction theming needs.
