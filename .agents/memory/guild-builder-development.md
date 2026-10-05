@@ -35,6 +35,12 @@ Good Job is the designated admin test guild.
 or treat it as a disposable fixture during automated cleanup. Never store its
 key or recovery code in documentation or memory.
 
+Do not use Good Job as the example guild in public copy or placeholder content.
+
+**Why:** The user explicitly requested removing it as the example guild.
+
+**How to apply:** Use generic examples without changing the real Good Job guild.
+
 Guild-key inputs must allow users to view what they entered.
 
 **Why:** The user requested a visible input or an optional input viewer.

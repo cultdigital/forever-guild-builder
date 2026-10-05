@@ -220,7 +220,7 @@ async function home() {
   p.append(el('p', null, 'A private raid-frame roster for your guild. Each guild has its own slug and a four-word guild key. Share the key only with members you trust.'));
   p.append(el('p', 'muted', 'Open your guild with the invite URL you were given, or type its slug.'));
   const form = el('form');
-  const input = field(form, 'slug', 'Invite URL or guild slug', { required: true, maxLength: 300, placeholder: 'good-job' });
+  const input = field(form, 'slug', 'Invite URL or guild slug', { required: true, maxLength: 300, placeholder: 'your-guild' });
   const fmsg = msgLine();
   form.append(btn('Open guild', 'primary', null, 'submit'), fmsg);
   form.onsubmit = (e) => {
