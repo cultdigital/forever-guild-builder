@@ -1,6 +1,6 @@
 ---
 name: Guild Builder scope ordering
-description: Preserving completed splits despite superseded multi-guild plan wording.
+description: Guild Builder scope, raid-split access, Classic role nomenclature, and the designated admin test guild.
 ---
 
 Preserve the completed raid-split feature during the multi-guild conversion.
@@ -16,3 +16,21 @@ within Composition or visibly linked in the app.
 
 **How to apply:** Preserve a clearly labelled Composition entry point and ensure
 navigation does not hide raid-split access on narrow screens.
+
+Use Classic WoW (Vanilla/Forever) nomenclature throughout the app: Tank, Healer,
+and DPS, not Warden, Mender, or Striker.
+
+**Why:** The user explicitly requested Classic/Forever nomenclature after seeing
+the non-Classic names in the signup-page demo.
+
+**How to apply:** Apply these names consistently to role headings and demo
+examples. Do not rename real members' character names as part of terminology
+cleanup, or remove intentional Forever-specific classes/races/raid content.
+
+Good Job is the designated admin test guild.
+
+**Why:** The user stated that Good Job will be used as the admin test guild.
+
+**How to apply:** Keep its existing migrated entry available; do not recreate it
+or treat it as a disposable fixture during automated cleanup. Never store its
+key or recovery code in documentation or memory.

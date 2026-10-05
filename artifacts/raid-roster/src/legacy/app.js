@@ -374,7 +374,7 @@ function renderRoster() {
     return true;
   });
 
-  const groups = [['tank', 'Tanks'], ['healer', 'Healers'], ['dps', 'Damage'], ['none', 'Undecided']];
+  const groups = [['tank', 'Tanks'], ['healer', 'Healers'], ['dps', 'DPS'], ['none', 'Undecided']];
   $('#raid-frames').innerHTML = groups.map(([g, label]) => {
     const list = rows.filter((m) => (roleOf(m.main.class, m.main.spec) || 'none') === g).sort(plateSort);
     if (!list.length) return '';

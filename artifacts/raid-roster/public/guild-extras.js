@@ -43,9 +43,9 @@ export function privacyPage(root) {
 }
 
 const DEMO = [
-  ['Tanks', 'tank', [['Demo Warden', '#c79c6e', 'Protection Warrior', 'MT']]],
-  ['Healers', 'healer', [['Demo Mender', '#f58cba', 'Holy Paladin', '']]],
-  ['Damage', 'dps', [['Demo Striker', '#fff569', 'Combat Rogue', '']]],
+  ['Tanks', 'tank', [['Demo Tank', '#c79c6e', 'Protection Warrior', 'MT']]],
+  ['Healers', 'healer', [['Demo Healer', '#f58cba', 'Holy Paladin', '']]],
+  ['DPS', 'dps', [['Demo DPS', '#fff569', 'Combat Rogue', '']]],
 ];
 
 export function demoPanel() {
