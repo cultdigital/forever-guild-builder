@@ -35,8 +35,10 @@ test('generated guild credentials contain exactly four words and are independent
 test('creation returns credentials once but stores only salted hashes and independent namespaces', async () => {
   const f = setup();
   const a = await f.create('Alpha');
-  const b = await f.create('Alpha');
+  const b = await f.create('Beta');
   assert.equal(a.status, 201);
+  assert.equal(a.json.guild.slug, 'alpha');
+  assert.equal(b.json.guild.slug, 'beta');
   assert.notEqual(a.json.guild.slug, b.json.guild.slug);
   assert.notEqual(a.json.key, a.json.recoveryCode);
   const meta = JSON.parse(f.strings.get(`guild:${a.json.guild.id}:meta`));

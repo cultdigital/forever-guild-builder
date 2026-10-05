@@ -11,6 +11,7 @@ export interface PublicGuild {
   id: string;
   name: string;
   slug: string;
+  slugAliases?: string[];
   faction: PublicGuildFaction;
   donationDismissed: boolean;
 }

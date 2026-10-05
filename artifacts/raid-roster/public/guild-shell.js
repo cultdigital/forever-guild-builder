@@ -244,8 +244,8 @@ async function home() {
 
 /* ---------- login + recovery ---------- */
 async function enter(slug, key) {
-  await send('POST', '/api/session', { slug, key });
-  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  const { guild } = await send('POST', '/api/session', { slug, key });
+  history.replaceState(null, '', '/g/' + guild.slug + location.search);
 }
 
 function login(slug, msg) {
@@ -469,7 +469,8 @@ async function boot() {
   }
   let data = null;
   try { data = await api('/api/guild'); } catch (e) { if (e.status !== 401) return showError(e.message); }
-  if (data && data.guild && data.guild.slug === slug) {
+  if (data && data.guild && (data.guild.slug === slug || data.guild.slugAliases?.includes(slug))) {
+    if (data.guild.slug !== slug) history.replaceState(null, '', '/g/' + data.guild.slug + location.search + location.hash);
     try { return await roster(data.guild); } catch (e) { return showError(e.message); }
   }
   const frag = location.hash.match(/^#k=(.+)$/);

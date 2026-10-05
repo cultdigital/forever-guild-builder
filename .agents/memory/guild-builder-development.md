@@ -42,3 +42,13 @@ Guild-key inputs must allow users to view what they entered.
 **How to apply:** Keep Show/Hide key controls available at login and wherever
 the app asks for the current guild key. Mask by default without changing or
 persisting the input value when visibility is toggled.
+
+Use plain guild-name slugs without a mandatory random suffix; Good Job's login
+must be `good-job`.
+
+**Why:** The user wants a friendly tool for testing raid configurations and
+planning, considers name sniping unlikely, and explicitly requested `good-job`.
+
+**How to apply:** Prefer readable name-based URLs. Reject an occupied slug with
+a clear request for a different name instead of silently appending a hash.
+Preserve old invite links as aliases when changing an existing guild URL.

@@ -12,7 +12,7 @@
     "test:guild-factions": "node --test ./src/test-guild-factions.mjs",
     "migrate:good-job": "node ./src/migrate-good-job.mjs",
     "test:guild-migration": "node --test ./src/test-guild-migration.mjs",
-    "test:guilds": "node --test ./src/test-guild-foundation.mjs ./src/test-guild-management.mjs ./src/test-guild-limits.mjs ./src/test-guild-factions.mjs ./src/test-guild-migration.mjs",
+    "test:guilds": "node --test ./src/test-guild-foundation.mjs ./src/test-guild-management.mjs ./src/test-guild-limits.mjs ./src/test-guild-factions.mjs ./src/test-guild-migration.mjs ./src/test-guild-slugs.mjs",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -29,6 +29,7 @@ export const CreatePrivateGuildResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "slug": zod.string(),
+  "slugAliases": zod.array(zod.string()).optional(),
   "faction": zod.enum(['horde', 'alliance']),
   "donationDismissed": zod.boolean()
 }),
@@ -56,6 +57,7 @@ export const RotatePrivateGuildKeyResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "slug": zod.string(),
+  "slugAliases": zod.array(zod.string()).optional(),
   "faction": zod.enum(['horde', 'alliance']),
   "donationDismissed": zod.boolean()
 }),
@@ -81,6 +83,7 @@ export const RecoverPrivateGuildKeyResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "slug": zod.string(),
+  "slugAliases": zod.array(zod.string()).optional(),
   "faction": zod.enum(['horde', 'alliance']),
   "donationDismissed": zod.boolean()
 }),
@@ -117,6 +120,7 @@ export const LoginToGuildResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "slug": zod.string(),
+  "slugAliases": zod.array(zod.string()).optional(),
   "faction": zod.enum(['horde', 'alliance']),
   "donationDismissed": zod.boolean()
 })
@@ -148,6 +152,7 @@ export const UpdatePrivateGuildSettingsResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "slug": zod.string(),
+  "slugAliases": zod.array(zod.string()).optional(),
   "faction": zod.enum(['horde', 'alliance']),
   "donationDismissed": zod.boolean()
 }),
@@ -181,6 +186,7 @@ export const GetCurrentGuildResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "slug": zod.string(),
+  "slugAliases": zod.array(zod.string()).optional(),
   "faction": zod.enum(['horde', 'alliance']),
   "donationDismissed": zod.boolean()
 })
@@ -224,6 +230,7 @@ export const GetRosterResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "slug": zod.string(),
+  "slugAliases": zod.array(zod.string()).optional(),
   "faction": zod.enum(['horde', 'alliance']),
   "donationDismissed": zod.boolean()
 }).optional()

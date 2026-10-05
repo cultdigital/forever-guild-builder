@@ -33,7 +33,20 @@ export function createGuildFixture() {
         else { strings.set(k, rest[0]); result = 'OK'; }
       } else if (cmd === 'EVAL') {
         const script = k, n = Number(rest[0]), keys = rest.slice(1, n + 1), argv = rest.slice(n + 1);
-        if (script.includes('MIGRATE_GOOD_JOB')) {
+        if (script.includes('RENAME_GUILD_SLUG')) {
+          const raw = strings.get(keys[0]);
+          if (!raw) result = -1;
+          else if (raw !== argv[0]) result = -3;
+          else if ([keys[1], ...keys.slice(6)].some((key) => strings.has(key) && strings.get(key) !== argv[2])) result = -2;
+          else {
+            strings.set(keys[0], argv[1]); expire(keys[0], argv[3]);
+            [keys[1], ...keys.slice(6)].forEach((key) => { strings.set(key, argv[2]); expire(key, argv[3]); });
+            keys.slice(2, 4).forEach((key) => expire(key, argv[3]));
+            zadd(keys[4], argv[4], argv[2]);
+            if (argv[5]) strings.set(keys[5], argv[5]);
+            result = 1;
+          }
+        } else if (script.includes('MIGRATE_GOOD_JOB')) {
           if (strings.has(keys[5])) result = [0, strings.get(keys[5])];
           else {
             const index = indexes.get(keys[4]) || new Map();
@@ -80,6 +93,7 @@ export function createGuildFixture() {
               Object.assign(meta, JSON.parse(argv[1]), { updatedAt: argv[4] });
               result = JSON.stringify(meta); strings.set(keys[0], result);
               keys.slice(0, 4).forEach((key) => expire(key, argv[2]));
+              keys.slice(5).forEach((key) => expire(key, argv[2]));
               zadd(keys[4], Number(argv[3]) + Number(argv[2]), meta.id);
             }
           }
@@ -87,7 +101,7 @@ export function createGuildFixture() {
           const raw = strings.get(keys[0]);
           if (!raw) result = -1;
           else if (JSON.parse(raw).keyVersion !== Number(argv[0])) result = -2;
-          else { keys.slice(0, 4).forEach(del); indexes.get(keys[4])?.delete(argv[1]); result = 1; }
+          else { [...keys.slice(0, 4), ...keys.slice(5)].forEach(del); indexes.get(keys[4])?.delete(argv[1]); result = 1; }
         } else if (script.includes('HEXISTS')) {
           if (!strings.has(keys[0])) result = -1;
           else if (JSON.parse(strings.get(keys[0])).keyVersion !== Number(argv[7])) result = -4;
@@ -108,6 +122,7 @@ export function createGuildFixture() {
               if (argv[0] === 'remove') members.delete(argv[1]);
               else members.set(argv[1], value);
               keys.slice(0, 4).forEach((key) => expire(key, argv[3]));
+              keys.slice(5).forEach((key) => expire(key, argv[3]));
               zadd(keys[4], argv[4], argv[5]);
               result = 1;
             }

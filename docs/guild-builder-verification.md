@@ -7,10 +7,12 @@ were explicitly deferred; no bot-protection bypass was introduced.
 
 ## Completed checks
 
-- 33 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
+- 36 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
   credential hashing, session signing/revocation, creation and login throttling,
   write/read limits, capacity, settings, rotation, recovery, deletion, faction
   validation, expiry, stale-write rejection and idempotent migration.
+- Readable-slug checks cover collision rejection, alias lookup and expiry,
+  deletion of aliases, and preservation of credentials and records during URL changes.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,
@@ -40,6 +42,15 @@ were explicitly deferred; no bot-protection bypass was introduced.
 - Temporary guilds were deleted through the protected API using their current
   keys and exact names. Their data and capacity-index entries were confirmed
   absent; test-owned abuse counters were also cleaned up.
+- Good Job's canonical login is now `good-job`. Its existing ID, key/recovery
+  hashes, key version, all 21 members, and split collection were preserved during
+  the atomic URL update. The migration marker now resolves the readable slug.
+  The old suffixed URL is retained as an alias; compatibility and canonical
+  navigation work in the updated app after republishing.
+- Workspace Playwright verified home-page entry using `good-job`, existing-key
+  login, all 21 members, reload, and both signed-in and signed-out old-link
+  canonicalization. Live published HTTP login and roster loading also succeed
+  with `good-job` and the unchanged key.
 
 ## Acceptance results
 

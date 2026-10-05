@@ -437,6 +437,10 @@ components:
           type: string
         slug:
           type: string
+        slugAliases:
+          type: array
+          items:
+            type: string
         faction:
           type: string
           enum: [horde, alliance]
