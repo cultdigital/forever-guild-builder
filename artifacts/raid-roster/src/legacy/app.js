@@ -4,6 +4,7 @@ import {
 } from './data.js';
 import { createSplits } from './split-controls.js';
 import { memberRole } from './member-sort.js';
+import { analyseComposition, compositionRoleStatus } from './composition.js';
 import { applyGuildIdentity } from '/guild-identity.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -46,7 +47,7 @@ function charIcons(c, size = '') {
 
 let scopeTarget = '';
 const splits = createSplits({
-  getMembers: () => members, api, toast, esc, nameChip,
+  getMembers: () => members, api, toast, esc, nameChip, teamComposition: renderTeamComposition,
   onScopeChange: (team, quiet) => {
     const key = team ? `${team.id}:${team.size}` : '';
     if (team && (!quiet || key !== scopeTarget) && RAID_SIZES[String(team.size)]) raidSize = String(team.size);
@@ -93,38 +94,7 @@ async function load() {
 
 // ---------- composition maths ----------
 function analyse(list = members) {
-  const total = list.length;
-  const byRole = { tank: [], healer: [], dps: [], none: [] };
-  const flex = { tank: [], healer: [], dps: [] };
-  const cls = {};
-  for (const c of Object.keys(CLASSES)) {
-    cls[c] = { mains: [], alts: [], noSpec: [], specs: {} };
-    for (const [sid] of CLASSES[c].specs) cls[c].specs[sid] = { mains: [], alts: [] };
-  }
-  const races = {};
-
-  for (const m of list) {
-    const r = memberRole(m);
-    byRole[r || 'none'].push(m);
-    const C = cls[m.main.class];
-    if (C) {
-      C.mains.push(m);
-      if (m.main.spec && C.specs[m.main.spec]) C.specs[m.main.spec].mains.push(m);
-      else C.noSpec.push(m);
-    }
-    races[m.main.race || 'none'] = (races[m.main.race || 'none'] || 0) + 1;
-
-    const seenRole = new Set();
-    for (const a of m.alts || []) {
-      const A = cls[a.class];
-      if (!A) continue;
-      A.alts.push({ m, a });
-      if (a.spec && A.specs[a.spec]) A.specs[a.spec].alts.push({ m, a });
-      const ar = roleOf(a.class, a.spec);
-      if (ar && ar !== r && !seenRole.has(ar)) { seenRole.add(ar); flex[ar].push({ m, a }); }
-    }
-  }
-  return { total, byRole, flex, cls, races };
+  return analyseComposition(list, CLASSES);
 }
 
 const willRank = { keen: 0, happy: 1, ifneeded: 2 };
@@ -159,12 +129,7 @@ function renderComp() {
   // Role cards
   $('#role-cards').innerHTML = ROLE_ORDER.map((r) => {
     const have = A.byRole[r].length, want = target[r];
-    const diff = have - want;
-    let status, cls;
-    if (diff < 0) { status = `Short ${-diff}`; cls = 'bad'; }
-    else if (r === 'dps' && have > want * 1.3) { status = `${diff} over — DPS heavy`; cls = 'warn'; }
-    else if (diff > 0) { status = `+${diff} bench`; cls = 'good'; }
-    else { status = 'On target'; cls = 'good'; }
+    const { status, className: cls } = compositionRoleStatus(have, want, r);
     const fl = A.flex[r];
     return `<div class="role-card ${cls}" style="--rc:${ROLES[r].color}">
       <div class="rc-top">${icon(ROLES[r].icon, 'lg', ROLES[r].label)}<div><div class="rc-label">${r === 'dps' ? 'DPS' : ROLES[r].label + 's'}</div><div class="rc-status">${status}</div></div></div>
@@ -202,6 +167,10 @@ function renderComp() {
 }
 
 function renderInsights(A, target) {
+  $('#insights').innerHTML = insightsHtml(A, target, raidSize, splits.scopeMembers());
+}
+
+function insightsHtml(A, target, size, list) {
   const items = [];
   const add = (sev, html) => items.push({ sev, html });
 
@@ -209,7 +178,7 @@ function renderInsights(A, target) {
     const have = A.byRole[r].length, want = target[r];
     if (have < want) {
       const fl = A.flex[r];
-      add('gap', `<b>Short ${plural(want - have, ROLES[r].label.toLowerCase())}</b> for a ${raidSize}-man (${have}/${want}).${fl.length ? ` Could flex: ${flexNames(fl)}` : ' Nobody has listed this role as an alternate.'}`);
+      add('gap', `<b>Short ${plural(want - have, ROLES[r].label.toLowerCase())}</b> for a ${size}-man (${have}/${want}).${fl.length ? ` Could flex: ${flexNames(fl)}` : ' Nobody has listed this role as an alternate.'}`);
     }
   }
 
@@ -251,14 +220,14 @@ function renderInsights(A, target) {
   const undecided = A.byRole.none;
   if (undecided.length) add('info', `<b>${plural(undecided.length, 'hybrid')} without a spec:</b> ${undecided.map((m) => `${nameChip(m)} <span class="muted">(${CLASSES[m.main.class].label})</span>`).join(', ')}. Their role isn't counted until they choose.`);
 
-  const noAlts = splits.scopeMembers().filter((m) => !m.alts?.length).length;
+  const noAlts = list.filter((m) => !m.alts?.length).length;
   if (noAlts) add('info', `<b>${noAlts} of ${A.total}</b> haven't listed any alternates — flex options above may be understated.`);
 
-  if (!items.some((i) => i.sev === 'gap')) add('ok', `<b>Core roles covered</b> for a ${raidSize}-man and every class is represented.`);
+  if (!items.some((i) => i.sev === 'gap')) add('ok', `<b>Core roles covered</b> for a ${size}-man and every class is represented.`);
 
   const order = { gap: 0, warn: 1, info: 2, ok: 3 };
   items.sort((a, b) => order[a.sev] - order[b.sev]);
-  $('#insights').innerHTML = items.map((i) => `<li class="ins ${i.sev}"><span class="ins-tag">${{ gap: 'Gap', warn: 'Watch', info: 'Note', ok: 'Good' }[i.sev]}</span><div>${i.html}</div></li>`).join('');
+  return items.map((i) => `<li class="ins ${i.sev}"><span class="ins-tag">${{ gap: 'Gap', warn: 'Watch', info: 'Note', ok: 'Good' }[i.sev]}</span><div>${i.html}</div></li>`).join('');
 }
 
 function pips(mains, alts, color) {
@@ -294,12 +263,35 @@ function renderClassGrid(A) {
 }
 
 function renderUtility(A) {
-  $('#utility').innerHTML = Object.entries(CLASSES).map(([c, def]) => {
+  $('#utility').innerHTML = utilityHtml(A);
+}
+
+function utilityHtml(A) {
+  return Object.entries(CLASSES).map(([c, def]) => {
     const n = A.cls[c].mains.length, alts = A.cls[c].alts.length;
     const st = n ? 'have' : alts ? 'flex' : 'miss';
     const label = n ? `${n} main${n > 1 ? 's' : ''}` : alts ? `alts only (${alts})` : 'missing';
     return `<li class="util ${st}">${icon(UTILITY_ICON[c], 'sm')}<div><b style="color:${def.color}">${esc(def.utility)}</b><span class="muted">${def.label}</span></div><span class="util-st">${label}</span></li>`;
   }).join('');
+}
+
+function renderTeamComposition(list, team) {
+  const A = analyse(list), target = RAID_SIZES[String(team.size)];
+  return `<aside class="sp-composition" data-sp-composition aria-label="${esc(team.name)} composition check">
+    <div class="sp-comp-head"><h4>Composition check</h4><span>${team.size}-man target · ${team.size - A.total} open slots</span></div>
+    <div class="sp-comp-roles">${ROLE_ORDER.map((r) => {
+      const have = A.byRole[r].length, want = target[r];
+      const { status, className } = compositionRoleStatus(have, want, r);
+      return `<div class="sp-comp-role ${className}" data-comp-role="${r}">
+        <header>${icon(ROLES[r].icon, 'sm', '')}<span>${ROLES[r].label}</span></header>
+        <div class="sp-comp-count"><strong>${have}</strong> / ${want}</div><span class="sp-comp-status">${status}</span>
+        ${A.flex[r].length ? `<div class="sp-comp-flex">Could flex: ${flexNames(A.flex[r], 4)}</div>` : ''}
+      </div>`;
+    }).join('')}</div>
+    <p class="sp-comp-note">${A.byRole.none.length ? `${A.byRole.none.length} undecided; their roles are not counted. ` : ''}Class/spec and utility checks use signed-up characters, not an assumed alt.</p>
+    <details class="sp-comp-details" data-comp-details="gaps"><summary>Gaps &amp; pressure points</summary><ul class="insights">${insightsHtml(A, target, team.size, list)}</ul></details>
+    <details class="sp-comp-details" data-comp-details="utility"><summary>Raid utility</summary><ul class="utility">${utilityHtml(A)}</ul></details>
+  </aside>`;
 }
 
 function renderRaces(A) {

@@ -1,6 +1,7 @@
 // Split setups: saved raid team plans + composition scope. Imperative, no framework.
 import { compareMembersByRoleClass, memberRole } from './member-sort.js';
 import { ROLES, roleOf, iconUrl } from './data.js';
+import { attachSplitDrag, moveSplitMember } from '/split-drag.js';
 
 const MAX_ROSTER = 100;
 const MAX_TEAMS = 10;
@@ -9,7 +10,7 @@ const PRESETS = ['2x10', '2x20', '5x20', '10x10', '2x40'];
 const SCOPE_KEY = `raid-roster-scope:${window.guildContext?.id || 'legacy'}`;
 const $ = (s) => document.querySelector(s);
 
-export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeChange }) {
+export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeChange, teamComposition }) {
   let setups = [];
   let storage = '';
   let loadError = '';
@@ -19,6 +20,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
   let saveError = '';
   let notice = '';
   let saving = false;
+  const expandedComposition = new Map();
   let scope = readScope();
 
   function readScope() {
@@ -139,21 +141,14 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     render();
   }
   function findTeam(id) { return draft.teams.find((t) => t.id === id); }
-  function assign(memberId, teamId) {
-    const destination = teamId ? findTeam(teamId) : null;
-    if (teamId && !destination) return;
-    if (destination && !destination.memberIds.includes(memberId) && destination.memberIds.length >= destination.size) {
-      toast(`${destination.name} is full (${destination.size}).`, true);
-      return render();
-    }
-    for (const t of draft.teams) t.memberIds = t.memberIds.filter((x) => x !== memberId);
-    if (teamId) {
-      const t = findTeam(teamId);
-      if (!t) return;
-      if (t.memberIds.length >= t.size) { toast(`${t.name} is full (${t.size}).`, true); return render(); }
-      t.memberIds.push(memberId);
-    }
+  function assign(memberId, teamId, role) {
+    if (!draft || readOnly() || saving) return false;
+    const member = memberMap().get(memberId);
+    if (!member) { toast('That player no longer exists. Refresh the roster.', true); return false; }
+    const error = moveSplitMember(draft, memberId, teamId, role, roleOf(member.main?.class, member.main?.spec));
+    if (error) { toast(error, true); return false; }
     render();
+    return true;
   }
   function addTeam() {
     if (draft.teams.length >= MAX_TEAMS) return toast(`Up to ${MAX_TEAMS} teams per setup.`, true);
@@ -225,18 +220,16 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     const roleIcon = roleInfo
       ? `<img class="sp-role-icon" src="${iconUrl(roleInfo.icon)}" alt="${roleInfo.label} role" title="${roleInfo.label}" width="20" height="20">`
       : '<span class="sp-role-icon" role="img" aria-label="Undecided role" title="Undecided">?</span>';
-    const originalRole = ROLES[roleOf(m.main?.class, m.main?.spec)]?.label || 'Undecided';
-    const override = draft.memberRoles[m.id] || '';
     const others = draft.teams.filter((t) => t.id !== teamId);
     const opts = (cur) => `${cur
       ? `<option value="${esc(teamId)}" disabled selected>Move / unassign...</option><option value="">Unassign</option>`
       : '<option value="" disabled selected>Assign to...</option>'
     }${others.map((t) => `<option value="${esc(t.id)}" ${t.memberIds.length >= t.size ? 'disabled' : ''}>${esc(t.name)}${t.memberIds.length >= t.size ? ' (full)' : ''}</option>`).join('')}`;
-    return `<li class="sp-member" data-sp-member="${esc(m.id)}">
-      <div class="sp-member-identity">${roleIcon}${nameChip(m)}</div>
+    return `<li class="sp-member" data-sp-member="${esc(m.id)}" draggable="${readOnly() || saving ? 'false' : 'true'}">
+      <div class="sp-member-identity"><span class="sp-drag-handle" data-sp-drag-handle aria-hidden="true" title="Drag to move">⠿</span>${roleIcon}${nameChip(m)}</div>
       <div class="sp-member-controls"><select data-sp-role="${esc(m.id)}" aria-label="Raid role for ${esc(m.name)}" ${readOnly() || saving ? 'disabled' : ''}>
-        <option value="" ${override ? '' : 'selected'}>Roster (${originalRole})</option>
-        ${Object.entries(ROLES).map(([id, r]) => `<option value="${id}" ${override === id ? 'selected' : ''}>${r.label}</option>`).join('')}
+        ${role ? '' : '<option value="" selected>Undecided</option>'}
+        ${Object.entries(ROLES).map(([id, r]) => `<option value="${id}" ${role === id ? 'selected' : ''}>${r.label}</option>`).join('')}
       </select><select data-sp-move="${esc(m.id)}" aria-label="Move ${esc(m.name)}" ${readOnly() || saving ? 'disabled' : ''}>${opts(Boolean(teamId))}</select></div></li>`;
   }
 
@@ -246,7 +239,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       const members = sorted.filter((m) => (memberRole(m) || 'none') === role);
       if (role === 'none' && !members.length) return '';
       const label = { tank: 'Tanks', healer: 'Healers', dps: 'DPS', none: 'Undecided' }[role];
-      return `<section class="sp-role-column" data-role="${role}">
+      return `<section class="sp-role-column" data-role="${role}" ${role === 'none' ? '' : `data-sp-drop-team="${esc(teamId)}" data-sp-drop-role="${role}"`}>
         <h3 class="sp-role-heading">${ROLES[role] ? `<img class="sp-role-icon" src="${iconUrl(ROLES[role].icon)}" alt="" width="20" height="20">` : ''}<span>${label}</span><span>${members.length}</span></h3>
         <ul class="sp-members">${members.length ? members.map((m) => memberRow(m, teamId)).join('') : '<li class="muted">No players</li>'}</ul>
       </section>`;
@@ -254,8 +247,12 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
   }
 
   function render() {
+    drag.cancel();
     const root = $('#splits-root');
     if (!root) return;
+    root.querySelectorAll('[data-comp-details]').forEach((detail) => {
+      expandedComposition.set(`${detail.closest('[data-team-id]').dataset.teamId}:${detail.dataset.compDetails}`, detail.open);
+    });
     const ms = getMembers();
     const full = ms.length >= MAX_ROSTER;
     const ro = readOnly() || saving;
@@ -280,6 +277,9 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
 
     if (draft) html += editorHtml();
     root.innerHTML = html;
+    root.querySelectorAll('[data-comp-details]').forEach((detail) => {
+      detail.open = expandedComposition.get(`${detail.closest('[data-team-id]').dataset.teamId}:${detail.dataset.compDetails}`) || false;
+    });
     refreshDirty();
   }
 
@@ -297,22 +297,25 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
       <div class="sp-fields"><label class="label" for="split-name">Setup name</label>
         <input id="split-name" maxlength="60" value="${esc(draft.name)}" ${ro ? 'disabled' : ''}></div>
       <div class="sp-totals" id="split-totals">${draft.teams.length} / ${MAX_TEAMS} teams, capacity ${cap} / ${MAX_ROSTER}, ${ids.size} assigned, ${pool.length} unassigned</div>
-      <p class="hint">Choose each player's raid role below. Role choices are saved for this setup only; their main roster class and spec stay unchanged. Select “Roster” to use their main role again.</p>
+      <p class="hint">Drag players between teams or back to Unassigned. Drop into a Tank, Healer or DPS column to set their raid role. On touch screens, drag using the dotted grip. Dropdowns work too. Changes apply to this setup only; save to keep them.</p>
+      <p id="split-drag-status" class="sr-only" aria-live="polite"></p>
       <div class="sp-teams" id="split-teams">${draft.teams.map((t) => {
         const full = t.memberIds.length >= t.size;
-        const list = t.memberIds.map((id) => mm.get(id)).filter(Boolean).sort(compareMembersByRoleClass);
-        return `<section class="sp-team ${full ? 'full' : ''}" data-team-id="${esc(t.id)}">
+        const list = t.memberIds.map((id) => mm.get(id)).filter(Boolean)
+          .map((m) => ({ ...m, raidRole: draft.memberRoles[m.id] })).sort(compareMembersByRoleClass);
+        return `<section class="sp-team ${full ? 'full' : ''}" data-team-id="${esc(t.id)}" data-sp-drop-team="${esc(t.id)}">
           <header><input class="sp-team-name" data-sp-team-name="${esc(t.id)}" maxlength="40" value="${esc(t.name)}" aria-label="Team name" ${ro ? 'disabled' : ''}>
             <select data-sp-size="${esc(t.id)}" aria-label="Team size" ${ro ? 'disabled' : ''}>${SIZES.map((s) => `<option value="${s}" ${s === t.size ? 'selected' : ''}>${s}-man</option>`).join('')}</select>
             <button type="button" class="x" data-sp-remove-team="${esc(t.id)}" aria-label="Remove team" ${ro ? 'disabled' : ''}>Remove</button></header>
           <div class="sp-count" data-sp-count>${t.memberIds.length} / ${t.size}</div>
           <div class="meter"><i style="width:${Math.min(100, (t.memberIds.length / t.size) * 100)}%"></i></div>
+          ${teamComposition(list, t)}
           ${roleColumns(list, t.id)}
         </section>`;
       }).join('')}</div>
       <button type="button" class="btn ghost small" data-sp-add-team ${ro || draft.teams.length >= MAX_TEAMS ? 'disabled' : ''}>+ Add team</button>
-      <div class="label">Unassigned (${pool.length})</div>
-      <div id="split-pool">${roleColumns(pool, '')}${pool.length ? '' : '<p class="muted">Everyone is assigned.</p>'}</div>
+      <div class="label" data-sp-drop-team="">Unassigned (${pool.length})</div>
+      <div id="split-pool" data-sp-drop-team="">${roleColumns(pool, '')}${pool.length ? '' : '<p class="muted">Everyone is assigned. Drop a player here to unassign.</p>'}</div>
       <div class="form-actions"><button type="button" class="btn primary" id="split-save" data-sp-save ${ro || saving ? 'disabled' : ''}>${saving ? 'Saving...' : 'Save changes'}</button>
         <button type="button" class="btn ghost" data-sp-close>${isDirty() ? 'Discard and close' : 'Close'}</button></div>
     </div>`;
@@ -349,7 +352,9 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     else if (t.dataset.spSize) setSize(t.dataset.spSize, Number(t.value));
     else if (t.dataset.spRole) {
       if (t.value && !Object.hasOwn(ROLES, t.value)) return;
-      if (t.value) draft.memberRoles[t.dataset.spRole] = t.value;
+      const member = memberMap().get(t.dataset.spRole);
+      if (!member) return;
+      if (t.value && t.value !== roleOf(member.main?.class, member.main?.spec)) draft.memberRoles[t.dataset.spRole] = t.value;
       else delete draft.memberRoles[t.dataset.spRole];
       render();
       document.querySelector(`[data-sp-role="${CSS.escape(t.dataset.spRole)}"]`)?.focus();
@@ -364,6 +369,21 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     refreshDirty();
   });
   window.addEventListener('beforeunload', (e) => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+
+  const drag = attachSplitDrag({
+    root: $('#splits-root'),
+    canEdit: () => Boolean(draft) && !readOnly() && !saving,
+    canDrop: (id, teamId) => {
+      const team = teamId ? findTeam(teamId) : null;
+      return !teamId || Boolean(team && (team.memberIds.includes(id) || team.memberIds.length < team.size));
+    },
+    onMove: (id, teamId, role) => {
+      const member = memberMap().get(id);
+      if (!assign(id, teamId, role)) return;
+      const status = $('#split-drag-status');
+      if (status && member) status.textContent = `${member.name}: ${teamId ? findTeam(teamId)?.name : 'Unassigned'}, ${ROLES[memberRole({ ...member, raidRole: draft.memberRoles[id] })]?.label || 'Undecided'}.`;
+    },
+  });
 
   return { load, render, renderScopeBar, scopeMembers, scopeTeam, isDirty, confirmDiscard, MAX_ROSTER };
 }

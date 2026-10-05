@@ -50,6 +50,19 @@ were explicitly deferred; no bot-protection bypass was introduced.
   guild passed role icons/columns, moving players with role choices intact,
   save/reload/reopen, setup isolation, team-scoped Composition counts, restoring
   the roster default, and desktop/mobile layouts without horizontal overflow.
+- Drag-and-drop: six placement checks pass, including atomic full-team rejection,
+  assignment/role changes, unassigning and invalid targets. Browser verification
+  passed native mouse dragging, touch-grip dragging, plain position labels,
+  dropdown fallback, save/reload persistence, outside-drop cancellation and
+  ignoring simulated external drags. The touch trace verified real touch pointer
+  handling; mobile had no horizontal overflow. Edge auto-scroll is implemented
+  but was not needed in the verified touch gesture.
+- Live split composition checks share the analysis, role-status, gap and utility
+  rules with Composition. Five analysis/status checks pass. Browser verification
+  passed independent per-team targets for 10/20/40, excluding unassigned players,
+  immediate unsaved role/move updates, scoped flex and alt-only utility coverage,
+  matching saved Composition scope, save/reload persistence, preserving expanded
+  details during edits, and readable desktop/mobile layouts without overflow.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,

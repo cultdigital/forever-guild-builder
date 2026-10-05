@@ -26,6 +26,8 @@ the non-Classic names in the signup-page demo.
 **How to apply:** Apply these names consistently to role headings and demo
 examples. Do not rename real members' character names as part of terminology
 cleanup, or remove intentional Forever-specific classes/races/raid content.
+The user also requested simple position-selector labels: Tank, Healer and DPS,
+without a “Roster” prefix or parenthesised role.
 
 Keep raid role choices specific to a setup, separate from the member's main
 signed-up class/spec.
@@ -37,6 +39,16 @@ rewrite their main character.
 **How to apply:** Saved team composition should respect planned role choices;
 the whole-roster view and other setups should still use the signed-up role
 unless they have their own choice.
+
+Split composition checks should follow each team's size and current draft,
+including unsaved player moves and role choices.
+
+**Why:** The user requested a composition check in the split tab so they can
+check raid composition while planning, without switching tabs.
+
+**How to apply:** Keep the check rules consistent with Composition, but do not
+reuse its selected guild/saved-team scope or global raid-size selection for an
+unsaved split preview.
 
 Good Job is the designated admin test guild.
 
