@@ -1,5 +1,5 @@
-- [Browser testing fallback](browser-testing.md) — if the testing subagent kind is unavailable, use workspace Playwright rather than skipping interaction checks.
-- [Guild Builder conventions](guild-builder-development.md) — preserve splits and Composition access; use Classic role names; Good Job is the admin test guild.
+- [Browser verification](browser-testing.md) — Playwright fallback, proxy-boundary checks, and transparent-image preview pitfalls.
+- [Guild Builder conventions](guild-builder-development.md) — guild identity/faction themes, Classic roles, splits access, privacy, and admin test-guild rules.
 - [OpenAPI request components](openapi-request-components.md) — named input components avoid duplicate request-body exports in this Orval setup.
 - [Redis Lua JSON](redis-lua-json.md) — preserve serialized records; Lua cjson can turn empty arrays into objects, unlike JavaScript transport fixtures.
 - [Secrets confirmation](secrets-confirmation.md) — “added or confirmed” verifies presence, not that values changed or the connection works.

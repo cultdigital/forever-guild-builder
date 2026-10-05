@@ -3,13 +3,12 @@ import {
   getSpec, roleOf, iconUrl, getFactionData, RACES as HORDE_RACES, ALLIANCE_RACES,
 } from './data.js';
 import { createSplits } from './split-controls.js';
+import { applyGuildIdentity } from '/guild-identity.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
-const GUILD_NAME = window.guildContext?.name || 'Guild';
-const FACTION = window.guildContext?.faction || 'horde';
-const { classes: CLASSES, races: RACES } = getFactionData(FACTION);
-document.documentElement.dataset.faction = FACTION;
-$('.banner .eyebrow').textContent = `World of Warcraft: Forever · ${FACTION === 'alliance' ? 'Alliance' : 'Horde'}`;
+let FACTION = window.guildContext?.faction || 'horde';
+let { classes: CLASSES, races: RACES } = getFactionData(FACTION);
+applyGuildIdentity(window.guildContext);
 const ROLE_ORDER = ['tank', 'healer', 'dps'];
 const UTILITY_ICON = {
   warrior: 'ability_warrior_battleshout', paladin: 'spell_magic_greaterblessingofkings',
@@ -75,7 +74,11 @@ async function load() {
       location.reload();
       return;
     }
-    if (data.guild) window.guildContext = data.guild;
+    if (data.guild) {
+      window.guildContext = data.guild;
+      FACTION = data.guild.faction;
+      ({ classes: CLASSES, races: RACES } = getFactionData(FACTION));
+    }
     $('#storage-note').textContent = { local: 'Local preview — data saved on this machine only.', missing: 'Read-only: storage not connected yet. Showing survey data.' }[data.storage] || '';
   } catch (e) {
     if (e.status === 401) { if (!window.guildCredentialDisplay) location.reload(); return; }
@@ -134,7 +137,7 @@ function flexNames(list, max = 6) {
 
 // ---------- header ----------
 function renderHeader(A) {
-  $('#guild-name').textContent = `<${GUILD_NAME}>`;
+  applyGuildIdentity(window.guildContext);
   const t = A.byRole.tank.length, h = A.byRole.healer.length, d = A.byRole.dps.length;
   $('#headline-stats').innerHTML = `<b>${A.total}</b> signed up · <span class="r-tank">${t} tanks</span> · <span class="r-healer">${h} healers</span> · <span class="r-dps">${d} DPS</span>${A.byRole.none.length ? ` · <span class="muted">${A.byRole.none.length} undecided</span>` : ''}`;
 }

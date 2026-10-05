@@ -26,6 +26,17 @@
   --body: 'Alegreya Sans', system-ui, sans-serif;
   --wow: 'Friz Quadrata TT', 'Friz Quadrata Std', 'Friz Quadrata', 'Marcellus', Georgia, serif;
   --guild-green: #40ff40;
+  --banner-top: #5c0f0c;
+  --banner-bottom: #280806;
+  --faction-glow: 200, 50, 42;
+  --primary-top: #c3302a;
+  --primary-bottom: #7d1511;
+  --primary-hover-top: #d63a33;
+  --primary-hover-bottom: #8f1a15;
+  --field-bg: #0e0907;
+  --tile-bg: #110b09;
+  --selection-top: #5a1612;
+  --selection-bottom: #3a0e0b;
 }
 
 :root[data-faction="alliance"] {
@@ -38,6 +49,17 @@
   --red-2: #2868aa;
   --text: #e3eaf3;
   --muted: #a7b5c8;
+  --banner-top: #173b68;
+  --banner-bottom: #0b1b34;
+  --faction-glow: 45, 105, 185;
+  --primary-top: #2868aa;
+  --primary-bottom: #123968;
+  --primary-hover-top: #347bc2;
+  --primary-hover-bottom: #194b85;
+  --field-bg: #0a1423;
+  --tile-bg: #0c1829;
+  --selection-top: #214c7b;
+  --selection-bottom: #102b4b;
 }
 :root[data-faction="alliance"] body {
   background-image:
@@ -71,7 +93,7 @@ button, input, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--gold-dim);
   background:
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.15) 0 1px, transparent 1px 4px),
-    linear-gradient(180deg, #5c0f0c, #280806);
+    linear-gradient(180deg, var(--banner-top), var(--banner-bottom));
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(224, 180, 90, 0.25);
   position: sticky; top: 0; z-index: 20;
 }
@@ -79,7 +101,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .crest {
   width: 64px; height: 64px; flex: none; border-radius: 50%;
   padding: 4px; background: conic-gradient(from 45deg, var(--gold-dim), var(--gold-2), var(--gold-dim), var(--gold), var(--gold-dim));
-  box-shadow: 0 0 0 2px #000, 0 0 20px rgba(200, 50, 42, 0.6);
+  box-shadow: 0 0 0 2px #000, 0 0 20px rgba(var(--faction-glow), 0.6);
 }
 .crest img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #000; }
 .eyebrow { margin: 0; font: 600 12px/1 var(--body); letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); opacity: 0.85; }
@@ -146,11 +168,11 @@ h3 { margin: 0; font: 700 16px/1.1 var(--head); letter-spacing: 0.04em; }
 .btn:active { transform: translateY(1px); }
 .btn.small { padding: 6px 12px; font-size: 14px; }
 .btn.primary {
-  background: linear-gradient(180deg, #c3302a, #7d1511); border-color: #e0b45a; color: #fff6e0;
+  background: linear-gradient(180deg, var(--primary-top), var(--primary-bottom)); border-color: #e0b45a; color: #fff6e0;
   font-family: var(--head); letter-spacing: 0.06em; padding: 12px 24px;
-  box-shadow: 0 4px 18px rgba(200, 50, 42, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 18px rgba(var(--faction-glow), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
-.btn.primary:hover { background: linear-gradient(180deg, #d63a33, #8f1a15); }
+.btn.primary:hover { background: linear-gradient(180deg, var(--primary-hover-top), var(--primary-hover-bottom)); }
 .btn.primary:disabled { opacity: 0.6; cursor: wait; }
 .btn.danger { border-color: #6d2420; color: #f0a39d; }
 .btn.danger:hover { background: rgba(224, 72, 62, 0.12); border-color: var(--bad); }
@@ -159,7 +181,7 @@ h3 { margin: 0; font: 700 16px/1.1 var(--head); letter-spacing: 0.04em; }
 .link-btn:hover { color: var(--gold); }
 
 input, textarea {
-  width: 100%; background: #0e0907; border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px;
+  width: 100%; background: var(--field-bg); border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 input:focus, textarea:focus, button:focus-visible, .tabs a:focus-visible {
@@ -167,11 +189,11 @@ input:focus, textarea:focus, button:focus-visible, .tabs a:focus-visible {
 }
 textarea { resize: vertical; }
 
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0e0907; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--field-bg); flex-wrap: wrap; }
 .seg button { border: none; background: none; padding: 8px 14px; cursor: pointer; color: var(--muted); font-weight: 700; font-size: 14px; }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button:hover { color: var(--text); }
-.seg button[aria-checked="true"] { background: linear-gradient(180deg, #5a1612, #3a0e0b); color: var(--gold-2); }
+.seg button[aria-checked="true"] { background: linear-gradient(180deg, var(--selection-top), var(--selection-bottom)); color: var(--gold-2); }
 
 /* ---------- form ---------- */
 .form { max-width: 920px; margin: 0 auto 18px; }
@@ -194,13 +216,13 @@ textarea { resize: vertical; }
 .tile {
   --c: var(--gold);
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px;
-  background: #110b09; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; text-align: center;
+  background: var(--tile-bg); border: 1px solid var(--line); border-radius: 9px; cursor: pointer; text-align: center;
   font-weight: 700; font-size: 14px; transition: border-color 0.12s, background 0.12s, transform 0.12s;
   position: relative;
 }
 .tile:hover:not(:disabled) { border-color: color-mix(in srgb, var(--c) 60%, transparent); transform: translateY(-1px); }
 .tile[aria-checked="true"] {
-  border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, #110b09);
+  border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--tile-bg));
   box-shadow: 0 0 0 1px var(--c), 0 0 18px color-mix(in srgb, var(--c) 30%, transparent);
 }
 .tile[aria-checked="true"] > span:first-of-type { color: var(--c); }
@@ -237,7 +259,7 @@ textarea { resize: vertical; }
   max-width: 920px; margin: 0 auto 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(0, 0, 0, 0.3);
 }
-.owned { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 7px; border: 1px solid var(--line); background: #110b09; cursor: pointer; color: var(--c); font-weight: 700; }
+.owned { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 7px; border: 1px solid var(--line); background: var(--tile-bg); cursor: pointer; color: var(--c); font-weight: 700; }
 .owned.on { border-color: var(--c); }
 
 /* ---------- composition ---------- */

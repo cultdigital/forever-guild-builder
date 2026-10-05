@@ -41,6 +41,21 @@ Do not use Good Job as the example guild in public copy or placeholder content.
 
 **How to apply:** Use generic examples without changing the real Good Job guild.
 
+The header must show the guild's actual name, and Alliance guilds must have an
+Alliance theme.
+
+**Why:** The user explicitly requested guild-specific names and faction theming.
+
+**How to apply:** Keep identity and faction presentation tied to current guild
+metadata, including after changes; do not leave Horde branding on Alliance guilds.
+
+Use the WoW: Forever logo as the app favicon.
+
+**Why:** The user explicitly requested the game logo instead of the generic icon.
+
+**How to apply:** Retain the real logo when updating browser icons; do not replace
+it with an invented guild crest.
+
 Guild-key inputs must allow users to view what they entered.
 
 **Why:** The user requested a visible input or an optional input viewer.

@@ -7,7 +7,7 @@ were explicitly deferred; no bot-protection bypass was introduced.
 
 ## Completed checks
 
-- 40 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
+- 43 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
   credential hashing, session signing/revocation, creation and login throttling,
   write/read limits, capacity, settings, rotation, recovery, deletion, faction
   validation, expiry, stale-write rejection and idempotent migration.
@@ -22,6 +22,12 @@ were explicitly deferred; no bot-protection bypass was introduced.
   Workspace Playwright verified all 21 players in a temporary unsaved draft,
   team assignment/unassignment and mobile ordering. Discarding the draft left
   existing saved split plans unchanged.
+- Guild identity checks cover live name updates, literal-text rendering and
+  faction-specific crest/label selection. Workspace Playwright checked Horde
+  and Alliance on desktop/mobile, blue/red banner and button styles, matching
+  races, name/faction updates on refresh, and creation-screen faction previews
+  with isolated browser fixtures. Real Good Job login still loads 21 members and
+  a header matching its actual metadata; no real guild faction or data was changed.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,

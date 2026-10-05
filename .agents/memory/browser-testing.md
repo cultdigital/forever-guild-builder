@@ -28,3 +28,12 @@ spawned inside the CodeExecution impure sandbox.
 
 **How to apply:** Use the normal shell tool or its documented callback for
 workspace browser scripts, keeping credentials out of script files and output.
+
+Verify transparent logo images in a browser before treating unusual preview
+pixels as corruption.
+
+**Why:** An image-tool preview displayed coloured horizontal bands in transparent
+areas of a valid PNG logo. Browser rendering correctly hid those pixels.
+
+**How to apply:** Check composited browser appearance and alpha before changing
+or replacing the source image; preserve transparency when generating icons.

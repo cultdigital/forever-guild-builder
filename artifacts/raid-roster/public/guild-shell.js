@@ -1,4 +1,5 @@
 import { privacyPage, demoPanel } from '/guild-extras.js';
+import { applyFactionTheme, applyGuildIdentity } from '/guild-identity.js';
 const root = document.getElementById('shell-root');
 const rosterRoot = document.getElementById('roster-root');
 const bar = document.getElementById('shell-bar');
@@ -106,6 +107,7 @@ function showError(msg) {
 
 /* ---------- one-time credentials ---------- */
 function showCredentials({ guild, key, recoveryCode, heading, intro, continueHref, continueText }) {
+  if (guild) applyGuildIdentity(guild);
   guardOn = true;
   window.guildCredentialDisplay = true;
   const p = panel('Shown once', heading);
@@ -171,7 +173,7 @@ function creationPanel(cfg) {
   const seg = el('div', 'seg');
   const fac = { value: 'horde' };
   [['horde', 'Horde'], ['alliance', 'Alliance']].forEach(([v, t]) => {
-    const b = btn(t, null, () => { fac.value = v; seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b))); });
+    const b = btn(t, null, () => { fac.value = v; applyFactionTheme(v); seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b))); });
     b.setAttribute('role', 'radio');
     b.setAttribute('aria-checked', String(v === fac.value));
     seg.append(b);
@@ -429,6 +431,7 @@ async function roster(guild) {
   if (!res.ok) throw new Error('Could not load the roster (' + res.status + ')');
   rosterRoot.innerHTML = await res.text(); // trusted first-party markup
   window.guildContext = guild;
+  applyGuildIdentity(guild);
   addSettingsTab(guild);
   root.replaceChildren();
   bar.hidden = false;
