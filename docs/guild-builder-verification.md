@@ -1,8 +1,8 @@
 # Forever Guild Builder — verification status
 
-The code is prepared, but live service acceptance and the Good Job migration are
-not complete. Missing KV configuration and Turnstile credentials are explicit
-blockers, not bypassed with an application fallback.
+The code is prepared, but full live service acceptance and the Good Job migration
+are not complete. The existing Upstash Redis connection is verified. Missing
+Turnstile credentials still block public creation, without an application bypass.
 
 ## Completed checks
 
@@ -18,15 +18,17 @@ blockers, not bypassed with an application fallback.
 - OpenAPI generation and the workspace typecheck pass.
 - Both managed Node workflows start cleanly.
 - Public landing and mobile privacy screenshots render successfully.
-- The running configuration reports storage unavailable, sessions configured
-  and public creation disabled. A same-origin JSON write reaches the setup
-  error (503), rather than an origin error or a silent local save.
+- The live Redis REST connection returns HTTP 200 and `PONG`. Read-only checks
+  found 21 original member records, no original split setups, and no migration marker.
+- Both services were restarted with the new Upstash settings. The running
+  configuration reports storage and sessions configured, public creation disabled,
+  and a healthy server. No original data was changed by these connection checks.
 
 ## Required acceptance checks still pending
 
 | Requirement | Isolated/server evidence | Live status |
 | --- | --- | --- |
-| Two guilds in separate browser sessions cannot access each other's data | Session-bound tenant isolation and hostile-ID checks pass | Pending KV connection and browser pass |
+| Two guilds in separate browser sessions cannot access each other's data | Session-bound tenant isolation and hostile-ID checks pass | Pending signed-in browser pass |
 | Wrong keys throttle; rotation revokes all sessions | Fixture checks pass | Pending signed-in browser pass |
 | Real Turnstile succeeds; creation/IP limit rejects the fourth attempt | Boundary checks cover successful, failed, wrong-host and wrong-action verification and the fourth attempt | Pending Turnstile configuration |
 | Oversize JSON and member 101 are rejected without blocking edits/deletes | HTTP 8 KB and atomic capacity fixture checks pass | Pending real Redis Lua execution |
@@ -37,10 +39,10 @@ blockers, not bypassed with an application fallback.
 
 ## Next prerequisite
 
-Connect the existing Vercel KV database using `KV_REST_API_URL` and
-`KV_REST_API_TOKEN` through workspace secrets. Do not paste credentials into chat.
-The documented manual Good Job importer can then be run with the user's
-confirmation, saving its one-time credentials privately.
+The existing database is connected using `UPSTASH_REDIS_REST_URL` and
+`UPSTASH_REDIS_REST_TOKEN` through workspace secrets. The documented manual
+Good Job importer can now be run with the user's confirmation, saving its
+one-time credentials privately. Do not paste database credentials into chat.
 
 Turnstile and a custom domain can be configured later. Turnstile remains required
 to enable public guild creation; a purchased domain is not required for testing.
