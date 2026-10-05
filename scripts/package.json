@@ -11,11 +11,12 @@
     "test:raid-setup": "node --test ./src/test-raid-setup.mjs",
     "test:guild-foundation": "node --test ./src/test-guild-foundation.mjs",
     "test:guild-management": "node --test ./src/test-guild-management.mjs",
+    "test:guild-invites": "node --test ./src/test-guild-invites.mjs",
     "test:guild-limits": "node --test ./src/test-guild-limits.mjs",
     "test:guild-factions": "node --test ./src/test-guild-factions.mjs",
     "migrate:good-job": "node ./src/migrate-good-job.mjs",
     "test:guild-migration": "node --test ./src/test-guild-migration.mjs",
-    "test:guilds": "node --test ./src/test-guild-foundation.mjs ./src/test-guild-management.mjs ./src/test-guild-limits.mjs ./src/test-guild-factions.mjs ./src/test-guild-migration.mjs ./src/test-guild-slugs.mjs ./src/test-member-sort.mjs ./src/test-guild-identity.mjs ./src/test-guild-settings.mjs",
+    "test:guilds": "node --test ./src/test-guild-foundation.mjs ./src/test-guild-management.mjs ./src/test-guild-invites.mjs ./src/test-guild-limits.mjs ./src/test-guild-factions.mjs ./src/test-guild-migration.mjs ./src/test-guild-slugs.mjs ./src/test-member-sort.mjs ./src/test-guild-identity.mjs ./src/test-guild-settings.mjs",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

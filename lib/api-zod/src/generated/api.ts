@@ -104,16 +104,77 @@ export const GetGuildConfigurationResponse = zod.object({
 
 
 /**
+ * @summary Check the active shared-editing invite without revealing its token
+ */
+export const getGuildInviteResponseTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const GetGuildInviteResponse = zod.object({
+  "active": zod.boolean(),
+  "id": zod.string().nullable(),
+  "createdAt": zod.coerce.date().nullable(),
+  "token": zod.string().regex(getGuildInviteResponseTokenRegExp).optional().describe('Returned once on generation'),
+  "signedOut": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Replace the active invitation and its sessions
+ */
+export const generateGuildInviteResponseTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const GenerateGuildInviteResponse = zod.object({
+  "active": zod.boolean(),
+  "id": zod.string().nullable(),
+  "createdAt": zod.coerce.date().nullable(),
+  "token": zod.string().regex(generateGuildInviteResponseTokenRegExp).optional().describe('Returned once on generation'),
+  "signedOut": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Revoke the invitation and sessions created through it
+ */
+export const revokeGuildInviteResponseTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const RevokeGuildInviteResponse = zod.object({
+  "active": zod.boolean(),
+  "id": zod.string().nullable(),
+  "createdAt": zod.coerce.date().nullable(),
+  "token": zod.string().regex(revokeGuildInviteResponseTokenRegExp).optional().describe('Returned once on generation'),
+  "signedOut": zod.boolean().optional()
+})
+
+
+/**
  * @summary Exchange a private guild slug and key for a signed session cookie
  */
-export const loginToGuildBodyKeyMax = 200;
+export const loginToGuildBodyOneKeyMax = 200;
+
+export const loginToGuildBodyOneInviteTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+export const loginToGuildBodyTwoKeyMax = 200;
+
+export const loginToGuildBodyTwoInviteTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+export const loginToGuildBodyThreeKeyMax = 200;
+
+export const loginToGuildBodyThreeInviteTokenRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
-
-export const LoginToGuildBody = zod.object({
+export const LoginToGuildBody = zod.union([zod.object({
+  "slug": zod.string().optional(),
+  "key": zod.string().max(loginToGuildBodyOneKeyMax),
+  "inviteToken": zod.string().regex(loginToGuildBodyOneInviteTokenRegExp).optional()
+}),zod.object({
+  "slug": zod.string().optional(),
+  "key": zod.string().max(loginToGuildBodyTwoKeyMax).optional(),
+  "inviteToken": zod.string().regex(loginToGuildBodyTwoInviteTokenRegExp)
+})]).and(zod.object({
   "slug": zod.string(),
-  "key": zod.string().max(loginToGuildBodyKeyMax)
-})
+  "key": zod.string().max(loginToGuildBodyThreeKeyMax).optional(),
+  "inviteToken": zod.string().regex(loginToGuildBodyThreeInviteTokenRegExp).optional()
+}))
 
 export const LoginToGuildResponse = zod.object({
   "guild": zod.object({

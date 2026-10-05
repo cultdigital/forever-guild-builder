@@ -257,7 +257,7 @@ function renderClassGrid(A) {
       <header>${icon(`classicon_${c}`, 'md', def.label)}<div class="cc-title"><h3>${def.label}</h3><span class="muted">${C.alts.length ? `+${C.alts.length} as alt` : 'no alts'}</span></div><div class="cc-count">${n}</div>${tag}</header>
       <div class="cc-bar"><i style="width:${pct(n, max)}%"></i></div>
       <ul class="spec-list">${specRows}${noSpec}</ul>
-      <footer>${C.mains.length ? C.mains.map((m) => `<button type="button" class="nm nm-btn" data-pen="classspec" data-id="${esc(m.id)}" style="--c:${def.color}" data-tip="Edit class & spec">${esc(m.name)}</button>`).join('') : '<span class="muted">Nobody yet</span>'}</footer>
+      <footer>${C.mains.length ? C.mains.map((m) => `<button type="button" class="nm nm-btn" data-pen="classspec" data-id="${esc(m.id)}" ${window.guildEditing ? '' : 'disabled'} style="--c:${def.color}" data-tip="Edit class & spec">${esc(m.name)}</button>`).join('') : '<span class="muted">Nobody yet</span>'}</footer>
     </article>`;
   }).join('');
 }
@@ -305,7 +305,7 @@ function renderProfessions() {
     const who = scoped.filter((m) => (m.professions || []).includes(k));
     return `<div class="prof-card ${who.length ? '' : 'empty-prof'}">
       <div class="prof-top">${icon(p.icon, 'sm', p.label)}<b>${p.label}</b>${p.primary ? '' : '<span class="muted">secondary</span>'}<span class="prof-count">${who.length}</span></div>
-      <div class="prof-names">${who.length ? who.map((m) => `<button type="button" class="nm nm-btn" data-pen="prof" data-id="${esc(m.id)}" style="--c:${classColor(m.main.class)}">${esc(m.name)}</button>`).join('') : '<span class="muted">Nobody yet</span>'}</div>
+      <div class="prof-names">${who.length ? who.map((m) => `<button type="button" class="nm nm-btn" data-pen="prof" data-id="${esc(m.id)}" ${window.guildEditing ? '' : 'disabled'} style="--c:${classColor(m.main.class)}">${esc(m.name)}</button>`).join('') : '<span class="muted">Nobody yet</span>'}</div>
     </div>`;
   }).join('');
 }
@@ -388,6 +388,7 @@ let pop = null; // { id, field, cls, anchor }
 const FIELD_LABEL = { name: 'Name', class: 'Class', spec: 'Spec', classspec: 'Class & spec', race: 'Race', assign: 'Raid assignment', prof: 'Professions' };
 
 function openPop(btn) {
+  if (!window.guildEditing) return;
   const m = members.find((x) => x.id === btn.dataset.id);
   if (!m) return;
   if (btn.dataset.pen === 'alts') { closePop(); startEdit(m.id); return; }
@@ -499,10 +500,11 @@ function renderForm() {
   $('#submit-btn').textContent = f.editingId ? 'Save changes' : 'Sign up';
   $('#cancel-edit').hidden = !f.editingId;
   const full = !f.editingId && members.length >= splits.MAX_ROSTER;
-  $('#submit-btn').disabled = full;
+  const viewOnly = Boolean(f.editingId) && !window.guildEditing;
+  $('#submit-btn').disabled = full || viewOnly;
   if (full) setMsg(`Roster full (${splits.MAX_ROSTER}/${splits.MAX_ROSTER}) - new sign-ups are closed. Editing and removing still work.`, 'error');
   else if ($('#form-msg').dataset.kind === 'error' && $('#form-msg').textContent.startsWith('Roster full')) setMsg('', '');
-  $('#delete-btn').hidden = !f.editingId;
+  $('#delete-btn').hidden = !f.editingId || viewOnly;
 
   $('#main-class').innerHTML = classTiles(f.main.class, 'data-main-class');
   $('#main-spec-wrap').hidden = !f.main.class;
@@ -537,6 +539,8 @@ function renderForm() {
     if (section && (populated || newForm)) section.open = populated;
   }
   renderedForm = f;
+  $('#signup-form').querySelectorAll('input, textarea, #add-alt').forEach((input) => { input.disabled = viewOnly; });
+  if (viewOnly) $('#signup-form').querySelectorAll('.tile, [data-will], [data-remove-alt]').forEach((button) => { button.disabled = true; });
   nameHint();
 }
 
@@ -552,6 +556,7 @@ function nameHint() {
 }
 
 function startEdit(id) {
+  if (!window.guildEditing) window.setGuildEditing(true);
   const m = members.find((x) => x.id === id);
   if (!m) return;
   form = { editingId: m.id, name: m.name, main: { ...m.main }, alts: m.alts.map((a) => ({ ...a })), professions: [...(m.professions || [])], notes: m.notes || '' };
@@ -739,6 +744,11 @@ window.addEventListener('hashchange', () => {
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
 document.addEventListener('guild-settings-saved', load);
+document.addEventListener('guild-edit-mode-changed', () => {
+  closePop();
+  renderForm();
+  document.querySelectorAll('.nm-btn').forEach((button) => { button.disabled = !window.guildEditing; });
+});
 
 // Tooltips
 const tip = $('#tooltip');

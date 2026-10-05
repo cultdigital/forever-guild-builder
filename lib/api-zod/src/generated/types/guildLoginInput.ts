@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface GuildLoginInput {
+export type GuildLoginInput = (unknown & {
   slug: string;
   /** @maxLength 200 */
-  key: string;
-}
+  key?: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  inviteToken?: string;
+});

@@ -35,7 +35,7 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
   const snap = (d) => JSON.stringify({ name: d.name, mainTeamId: d.mainTeamId,
     teams: d.teams.map((t) => ({ name: t.name, size: t.size, memberIds: t.memberIds, parties: t.parties })),
     memberRoles: Object.fromEntries(Object.entries(d.memberRoles || {}).sort(([a], [b]) => a.localeCompare(b))) });
-  const readOnly = () => storage === 'missing';
+  const readOnly = () => storage === 'missing' || !window.guildEditing;
   const locked = () => readOnly() || saving || !loaded || Boolean(loadError);
   const memberMap = () => new Map(getMembers().map((m) => [m.id, m]));
   const isDirty = () => Boolean(draft) && snap(draft) !== baseline;
@@ -328,7 +328,8 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     const pool = poolList();
     const assigned = draft.teams.reduce((n, t) => n + t.memberIds.length, 0);
     let html = '<div class="sp-banners">';
-    if (readOnly()) html += '<p class="sp-banner warn" id="splits-readonly" role="status">Read-only: storage is not connected, so builds cannot be saved.</p>';
+    if (storage === 'missing') html += '<p class="sp-banner warn" id="splits-readonly" role="status">Read-only: storage is not connected, so builds cannot be saved.</p>';
+    else if (!window.guildEditing) html += '<p class="sp-banner" role="status">Viewing raid plans. Enable Edit mode to move players or change this build.</p>';
     if (loadError) html += `<div class="sp-banner bad" id="splits-error" role="alert">Couldn't load saved compositions: ${esc(loadError)} <button type="button" class="btn small" data-sp-retry>Retry</button></div>`;
     html += '</div>';
     html += `<div class="panel sp-editor" id="split-editor">
@@ -507,6 +508,11 @@ export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeCha
     refreshDirty();
   });
   window.addEventListener('beforeunload', (e) => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+  document.addEventListener('guild-edit-mode-changed', () => {
+    if (roleDialog.open) roleDialog.close();
+    if (openDialog.open) openDialog.close();
+    if (draft) render();
+  });
 
   const drag = attachSplitDrag({
     root: $('#splits-root'),

@@ -117,6 +117,15 @@ h1 {
 
 .tabs { max-width: 1200px; margin: 0 auto; padding: 0 16px; display: flex; flex-wrap: wrap; gap: 4px; }
 .tabs { overflow-y: hidden; scrollbar-width: thin; }
+html[data-edit-mode="off"] .pen,
+html[data-edit-mode="off"] .sp-grip,
+html[data-edit-mode="off"] .sp-edit,
+html[data-edit-mode="off"] [data-sp-new],
+html[data-edit-mode="off"] [data-sp-save],
+html[data-edit-mode="off"] [data-sp-add-team],
+html[data-edit-mode="off"] .sp-menu,
+html[data-edit-mode="off"] .sp-size { display: none; }
+html[data-edit-mode="off"] .nm-btn { pointer-events: none; cursor: default; }
 .tabs a {
   padding: 10px 18px 11px; font: 700 14px/1 var(--head); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--muted); text-decoration: none; border: 1px solid transparent; border-bottom: none;

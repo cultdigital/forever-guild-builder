@@ -94,10 +94,26 @@ export interface GuildSettingsResponse {
   invalidRaces: GuildSettingsResponseInvalidRacesItem[];
 }
 
-export interface GuildLoginInput {
+export type GuildLoginInput = (unknown & {
   slug: string;
   /** @maxLength 200 */
-  key: string;
+  key?: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  inviteToken?: string;
+});
+
+export interface GuildInviteResponse {
+  active: boolean;
+  /** @nullable */
+  id: string | null;
+  /** @nullable */
+  createdAt: string | null;
+  /**
+     * Returned once on generation
+     * @pattern ^[a-f0-9]{64}$
+     */
+  token?: string;
+  signedOut?: boolean;
 }
 
 export interface GuildResponse {

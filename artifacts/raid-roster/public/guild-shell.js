@@ -9,6 +9,18 @@ let appLoaded = false;
 let guardOn = false;
 // Volatile only: never write guild keys to browser storage or cookies.
 let enteredGuildKey = null;
+window.guildEditing = false;
+window.setGuildEditing = (enabled) => {
+  window.guildEditing = Boolean(enabled);
+  document.documentElement.dataset.editMode = enabled ? 'on' : 'off';
+  const toggle = document.getElementById('guild-edit-mode');
+  if (toggle) {
+    toggle.textContent = enabled ? 'Edit mode: On' : 'Edit mode: Off';
+    toggle.setAttribute('aria-pressed', String(Boolean(enabled)));
+  }
+  document.dispatchEvent(new CustomEvent('guild-edit-mode-changed'));
+};
+document.documentElement.dataset.editMode = 'off';
 const keyVisibility = new WeakMap();
 
 const el = (tag, cls, text) => {
@@ -125,7 +137,7 @@ function parseGuildRef(raw) {
   try {
     const u = new URL(t);
     const m = u.pathname.match(/^\/g\/([a-z0-9][a-z0-9-]{0,62})\/?$/);
-    if (m) return '/g/' + m[1] + (/^#k=[^#\s]+$/.test(u.hash) ? u.hash : '');
+    if (m) return '/g/' + m[1] + (/^#[ki]=[^#\s]+$/.test(u.hash) ? u.hash : '');
   } catch { /* invalid */ }
   return null;
 }
@@ -244,7 +256,7 @@ function creationPanel(cfg) {
 
 async function home() {
   const p = panel('World of Warcraft: Forever', 'Forever Guild Builder');
-  p.append(el('p', null, 'A private raid roster for your guild. Open it with your invite link or guild slug, then enter the four-word key.'));
+  p.append(el('p', null, 'A private raid roster for your guild. Join directly using an invite link, or open your guild slug and enter its passphrase.'));
   const form = el('form');
   const input = field(form, 'slug', 'Invite URL or guild slug', { required: true, maxLength: 300, placeholder: 'your-guild' });
   const fmsg = msgLine();
@@ -279,11 +291,11 @@ async function enter(slug, key) {
 }
 
 function login(slug, msg) {
-  const p = panel('Private guild', 'Enter the guild key');
+  const p = panel('Private guild', 'Enter the guild passphrase');
   p.append(el('p', 'muted', 'Guild: ' + slug));
   if (msg) p.append(notice(msg, true));
   const form = el('form');
-  const input = field(form, 'key', 'Four-word guild key', { type: 'password', required: true });
+  const input = field(form, 'key', 'Guild passphrase', { type: 'password', required: true, placeholder: 'Your four-word passphrase' });
   const go = btn('Enter', 'primary', null, 'submit');
   const err = msgLine();
   form.append(go, err);
@@ -375,12 +387,115 @@ function settingsSection(guild) {
 
   // invite
   const knownKey = enteredGuildKey?.guildId === guild.id ? enteredGuildKey.key : '';
-  const iv = card('Invite access', knownKey
-    ? 'Key filled in for this page session only; never saved in browser storage.'
-    : 'Enter the current guild key to show it or copy an invite link. The server keeps only a hash and cannot recover it.');
+  const iv = card('Generate invite link', 'Anyone with this link can join and enable shared editing. No passphrase is included. Keep it within your guild.');
+  const inviteStatusLine = el('p', 'hint', 'Checking invite status…');
+  const inviteActions = el('div', 'invite-actions');
+  const inviteForm = el('div');
+  const inviteInput = field(inviteForm, 's-invite-link', 'Invite link', { type: 'url', readOnly: true });
+  inviteForm.hidden = true;
+  const inviteMessage = msgLine();
+  let activeInvite = false;
+  let inviteReady = false;
+  let inviteBusy = false;
+  let visibleInviteId = null;
+  let inviteStatusRequest = 0;
+  const setInviteBusy = (busy) => {
+    inviteBusy = busy;
+    generate.disabled = busy || !inviteReady;
+    revoke.disabled = busy || !activeInvite;
+    copy.disabled = busy;
+  };
+  const generate = btn('Generate invite link', 'primary', async () => {
+    if (!inviteReady) return;
+    if (activeInvite && !confirm('Replace the active invite? Its old link will stop working and sessions joined through it will be signed out. Your current session will remain signed in.')) return;
+    inviteStatusRequest++;
+    setInviteBusy(true);
+    await run(generate, inviteMessage, async () => {
+      const result = await send('POST', '/api/guild/invite');
+      if (!result.active || typeof result.token !== 'string' || !/^[a-f0-9]{64}$/.test(result.token) || typeof result.id !== 'string') {
+        throw new Error('The invite response was incomplete. Reload to check its status before trying again.');
+      }
+      activeInvite = result.active;
+      visibleInviteId = result.id;
+      inviteInput.value = location.origin + '/g/' + encodeURIComponent((window.guildContext || guild).slug) + '#i=' + result.token;
+      inviteForm.hidden = false;
+      inviteStatusLine.textContent = 'Active until revoked. Copy this link before reloading; it is shown only when generated.';
+      revoke.disabled = false;
+      generate.textContent = 'Generate replacement link';
+      inviteMessage.className = 'form-msg success';
+      inviteMessage.textContent = 'Invite link generated.';
+    });
+    generate.textContent = activeInvite ? 'Generate replacement link' : 'Generate invite link';
+    setInviteBusy(false);
+  });
+  const copy = btn('Copy invite link', null, async () => {
+    run(copy, inviteMessage, async () => {
+      try { await navigator.clipboard.writeText(inviteInput.value); }
+      catch { inviteInput.focus(); inviteInput.select(); throw new Error('Could not copy automatically. Copy the selected link manually.'); }
+      inviteMessage.className = 'form-msg success';
+      inviteMessage.textContent = 'Invite link copied.';
+    });
+  });
+  const revoke = btn('Revoke invite', 'danger', async () => {
+    if (!confirm('Revoke the invite link and sign out everyone who joined through it? This includes you if you used that invite. Passphrase sessions will stay signed in.')) return;
+    inviteStatusRequest++;
+    setInviteBusy(true);
+    await run(revoke, inviteMessage, async () => {
+      const result = await send('DELETE', '/api/guild/invite');
+      if (result.active !== false) throw new Error('The invite could not be confirmed as revoked. Reload to check its status.');
+      activeInvite = false;
+      visibleInviteId = null;
+      inviteInput.value = '';
+      inviteForm.hidden = true;
+      revoke.disabled = true;
+      generate.textContent = 'Generate invite link';
+      inviteStatusLine.textContent = 'No active invite link.';
+      inviteMessage.className = 'form-msg success';
+      inviteMessage.textContent = 'Invite link revoked. Sessions joined through it are signed out.';
+      if (result.signedOut) location.replace('/g/' + encodeURIComponent(guild.slug));
+    });
+    generate.textContent = activeInvite ? 'Generate replacement link' : 'Generate invite link';
+    setInviteBusy(false);
+  });
+  generate.disabled = true;
+  revoke.disabled = true;
+  inviteForm.append(copy);
+  inviteActions.append(generate, revoke);
+  iv.append(inviteStatusLine, inviteActions, inviteForm, inviteMessage);
+  const loadInviteStatus = async () => {
+    if (inviteBusy) return;
+    const request = ++inviteStatusRequest;
+    try {
+      const result = await api('/api/guild/invite');
+      if (request !== inviteStatusRequest) return;
+      activeInvite = result.active;
+      inviteReady = true;
+      generate.disabled = false;
+      revoke.disabled = !activeInvite;
+      generate.textContent = activeInvite ? 'Generate replacement link' : 'Generate invite link';
+      if (visibleInviteId && visibleInviteId !== result.id) {
+        visibleInviteId = null;
+        inviteInput.value = '';
+        inviteForm.hidden = true;
+      }
+      inviteStatusLine.textContent = visibleInviteId ? 'Active until revoked. Copy this link before reloading; it is shown only when generated.' : activeInvite
+        ? 'An invite is active. To get another copy after reloading, generate a replacement; the old link and its sessions will be revoked.'
+        : 'No active invite link.';
+    } catch (e) {
+      if (request !== inviteStatusRequest) return;
+      inviteStatusLine.textContent = 'Could not check invites: ' + e.message;
+      const retry = btn('Retry', 'small', () => { retry.remove(); loadInviteStatus(); });
+      iv.append(retry);
+    }
+  };
+  loadInviteStatus();
+  window.addEventListener('focus', () => { if (iv.isConnected) loadInviteStatus(); });
+  const passphrase = card('Guild passphrase', knownKey
+    ? 'Filled for this page session only; never saved in browser storage. Invite links no longer need this passphrase.'
+    : 'Enter your existing passphrase to view it. The server stores only its hash and cannot retrieve it.');
   const ifm = el('form');
-  const ik = field(ifm, 's-ikey', 'Current guild key', { type: 'password', required: true, value: knownKey, placeholder: 'Enter your guild key' });
-  const ib = btn('Copy invite link', null, null, 'submit');
+  const ik = field(ifm, 's-ikey', 'Current guild passphrase', { type: 'password', required: true, value: knownKey, placeholder: 'Your four-word passphrase' });
+  const ib = btn('Verify passphrase', null, null, 'submit');
   const im = msgLine();
   ifm.append(ib, im);
   ifm.onsubmit = (e) => {
@@ -388,14 +503,13 @@ function settingsSection(guild) {
     run(ib, im, async () => {
       const key = ik.value.trim();
       await send('POST', '/api/session', { slug: guild.slug, key });
-      const url = location.origin + '/g/' + guild.slug + '#k=' + encodeURIComponent(key);
-      await navigator.clipboard.writeText(url);
+      enteredGuildKey = { guildId: guild.id, key };
       keyVisibility.get(ik)(false);
       im.className = 'form-msg success';
-      im.textContent = 'Invite link copied. Anyone with it can enter the guild.';
+      im.textContent = 'Passphrase verified.';
     });
   };
-  iv.append(ifm);
+  passphrase.append(ifm);
 
   // export
   const ex = card('Export roster', 'Download the roster as CSV.');
@@ -481,8 +595,15 @@ async function roster(guild) {
   addSettingsTab(guild);
   root.replaceChildren();
   bar.hidden = false;
-  const header = rosterRoot.querySelector('.banner');
-  if (header) header.before(bar);
+  if (!document.getElementById('guild-edit-mode')) {
+    const toggle = btn('Edit mode: Off', 'small ghost', () => window.setGuildEditing(!window.guildEditing));
+    toggle.id = 'guild-edit-mode';
+    toggle.setAttribute('aria-pressed', 'false');
+    toggle.title = 'Show character and raid editing controls. Everyone in this guild can enable editing.';
+    bar.prepend(toggle);
+  }
+  const header = rosterRoot.querySelector('.banner-inner');
+  if (header) header.append(bar);
   if (!appLoaded) {
     appLoaded = true;
     await import('/assets/app.js');
@@ -508,6 +629,8 @@ async function boot() {
   const m = location.pathname.match(/^\/g\/([^/]+)\/?$/);
   if (!m) return home();
   const slug = decodeURIComponent(m[1]);
+  const frag = location.hash.match(/^#([ki])=(.+)$/);
+  if (frag) history.replaceState(null, '', location.pathname + location.search);
   root.replaceChildren(el('div', 'shell-skel'));
   let cfg;
   try { cfg = await api('/api/config'); } catch (e) { return showError(e.message); }
@@ -522,10 +645,12 @@ async function boot() {
     if (data.guild.slug !== slug) history.replaceState(null, '', '/g/' + data.guild.slug + location.search + location.hash);
     try { return await roster(data.guild); } catch (e) { return showError(e.message); }
   }
-  const frag = location.hash.match(/^#k=(.+)$/);
   if (frag) {
     try {
-      const guild = await enter(slug, decodeURIComponent(frag[1]));
+      const credential = decodeURIComponent(frag[2]);
+      history.replaceState(null, '', location.pathname + location.search);
+      const guild = frag[1] === 'k' ? await enter(slug, credential)
+        : (await send('POST', '/api/session', { slug, inviteToken: credential })).guild;
       return await roster(guild);
     } catch (e) {
       history.replaceState(null, '', location.pathname + location.search);

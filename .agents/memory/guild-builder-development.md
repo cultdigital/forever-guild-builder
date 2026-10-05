@@ -105,6 +105,14 @@ Alliance theme.
 **How to apply:** Keep identity and faction presentation tied to current guild
 metadata, including after changes; do not leave Horde branding on Alliance guilds.
 
+Keep guild navigation inside the banner: the guild name and faction crest link
+to home, with Logout in the banner and no separate Home button above it.
+
+**Why:** The user explicitly requested this navigation arrangement.
+
+**How to apply:** Preserve these home links and the integrated logout placement
+when changing the header layout, including on mobile.
+
 Settings faction choices preview the corresponding colours and crest immediately,
 but only Save changes persists the faction. Outside Settings, use the saved theme.
 
@@ -135,7 +143,7 @@ Guild-key inputs must allow users to view what they entered.
 the app asks for the current guild key. Mask by default without changing or
 persisting the input value when visibility is toggled.
 
-Invite key viewing may reuse a key entered during sign-in, but only in volatile
+Passphrase viewing may reuse a key entered during sign-in, but only in volatile
 page memory. After a full reload, the user must enter it again.
 
 **Why:** The user reported the Invite Show/Hide control as broken when its field
@@ -143,6 +151,22 @@ was empty. The server stores hashes and cannot recover a plaintext key.
 
 **How to apply:** Preserve entered keys across same-page settings refreshes,
 scope them to the signed-in guild, and never put them in browser storage or cookies.
+
+Use shared guild editing, not separate member/officer permission tiers or member accounts.
+
+**Why:** The user chose shared guild editing when asked which access model to use.
+
+**How to apply:** Invited users can edit all characters and raid plans. Edit mode is
+a viewing preference that anyone in the guild can enable, not an authorization boundary.
+Keep the existing credential checks for key rotation and guild deletion.
+
+Invite generation must not require or include the guild passphrase.
+
+**Why:** The user called out the previous coupling between invite links and the passphrase.
+
+**How to apply:** Use independent revocable invitations while preserving existing
+passphrase access. Explain replacement/revocation effects on invite-created sessions
+before those actions; do not silently sign out passphrase sessions.
 
 Retry only idempotent guild-details saves after network interruptions, and check
 actual server state rather than treating a lost response as a rejected write.

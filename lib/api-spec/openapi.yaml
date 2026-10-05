@@ -97,6 +97,37 @@ paths:
                     type: boolean
                   turnstileSiteKey:
                     type: [string, "null"]
+  /guild/invite:
+    get:
+      operationId: getGuildInvite
+      summary: Check the active shared-editing invite without revealing its token
+      responses:
+        "200":
+          description: Current invite status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildInviteResponse"
+    post:
+      operationId: generateGuildInvite
+      summary: Replace the active invitation and its sessions
+      responses:
+        "201":
+          description: New invite token returned once
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildInviteResponse"
+    delete:
+      operationId: revokeGuildInvite
+      summary: Revoke the invitation and sessions created through it
+      responses:
+        "200":
+          description: Invitation revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildInviteResponse"
   /session:
     post:
       operationId: loginToGuild
@@ -420,13 +451,28 @@ components:
                 type: string
     GuildLoginInput:
       type: object
-      required: [slug, key]
+      required: [slug]
+      anyOf:
+        - required: [key]
+        - required: [inviteToken]
       properties:
         slug:
           type: string
         key:
           type: string
           maxLength: 200
+        inviteToken:
+          type: string
+          pattern: "^[a-f0-9]{64}$"
+    GuildInviteResponse:
+      type: object
+      required: [active, createdAt, id]
+      properties:
+        active: { type: boolean }
+        id: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"], format: date-time }
+        token: { type: string, pattern: "^[a-f0-9]{64}$", description: Returned once on generation, never in status responses }
+        signedOut: { type: boolean }
     PublicGuild:
       type: object
       required: [id, name, slug, faction, donationDismissed]

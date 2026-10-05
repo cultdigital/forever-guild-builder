@@ -10,7 +10,7 @@
 .shell-notice.err { border-left-color: var(--bad); background: rgba(224, 72, 62, 0.1); color: #ffb0a8; }
 .shell-skel { height: 120px; border-radius: var(--radius); background: linear-gradient(90deg, var(--panel), var(--panel-2), var(--panel)); background-size: 200% 100%; animation: shell-pulse 1.4s linear infinite; }
 @keyframes shell-pulse { to { background-position: -200% 0; } }
-.shell-bar { display: flex; gap: 8px; justify-content: flex-end; max-width: 1200px; margin: 0 auto; padding: 10px 16px 0; }
+.shell-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin: 0 0 0 auto; padding: 0; }
 .shell-foot { padding-top: 24px; }
 .shell-foot a { color: var(--gold); }
 .key-input-row { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
@@ -31,6 +31,9 @@ form .key-input-row .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; }
 }
 .faction-option input[type="radio"]:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; box-shadow: none; }
 .faction-radios:disabled .faction-option, .shell-fs:disabled .faction-option { cursor: not-allowed; }
+.invite-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.shell-settings .invite-actions .btn { margin-top: 0; }
+#s-invite-link { font-size: 14px; }
 .ts-box { margin: 12px 0 0; min-height: 4px; }
 .shell-root .check { display: flex; gap: 10px; align-items: center; margin: 14px 0 0; }
 .shell-root .check input { width: auto; }
@@ -71,8 +74,18 @@ form .key-input-row .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; }
 .shell-det summary { min-height: 36px; display: flex; align-items: center; }
 .cred { padding: 12px 16px; margin: 16px 0; }
 .danger-zone { border-color: #6d2420; background: var(--panel); }
-.shell-bar { padding: 8px 16px 0; align-items: center; }
+.shell-bar { align-items: center; }
 .shell-bar .btn { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+.banner-inner .titles { flex: 1; min-width: 0; }
+.guild-name-home { display: block; text-decoration: none; }
+.guild-name-home h1 { overflow-wrap: anywhere; }
+.banner .crest:focus-visible, .guild-name-home:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 4px; border-radius: 4px; }
+.shell-bar .form-msg { flex-basis: 100%; text-align: right; }
+#shell-bar-msg:empty { display: none; }
+@media (max-width: 680px) {
+  .banner-inner { flex-wrap: wrap; }
+  .banner-inner .shell-bar { width: 100%; justify-content: space-between; }
+}
 .shell-root .demo { opacity: .85; }
 .shell-skel { height: 96px; }
 @media (max-width: 680px) { .shell-root { padding: 16px 12px; } .shell-root .panel, .shell-settings .panel { padding: 16px; } }

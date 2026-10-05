@@ -20,6 +20,7 @@ export * from './getSplitSetups200Storage';
 export * from './guildCredentialInput';
 export * from './guildCredentialsResponse';
 export * from './guildDeleteInput';
+export * from './guildInviteResponse';
 export * from './guildLoginInput';
 export * from './guildRecoveryInput';
 export * from './guildResponse';

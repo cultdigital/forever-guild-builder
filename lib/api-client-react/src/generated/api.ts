@@ -31,6 +31,7 @@ import type {
   GuildCredentialInput,
   GuildCredentialsResponse,
   GuildDeleteInput,
+  GuildInviteResponse,
   GuildLoginInput,
   GuildRecoveryInput,
   GuildResponse,
@@ -410,6 +411,231 @@ export function useGetGuildConfiguration<TData = Awaited<ReturnType<typeof getGu
 
 
 
+
+export const getGetGuildInviteUrl = () => {
+
+
+
+
+  return `/api/guild/invite`
+}
+
+/**
+ * @summary Check the active shared-editing invite without revealing its token
+ */
+export const getGuildInvite = async ( options?: Parameters<typeof customFetch>[1]): Promise<GuildInviteResponse> => {
+
+  return customFetch<GuildInviteResponse>(getGetGuildInviteUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGuildInviteQueryKey = () => {
+    return [
+    `/api/guild/invite`
+    ] as const;
+    }
+
+
+export const getGetGuildInviteQueryOptions = <TData = Awaited<ReturnType<typeof getGuildInvite>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuildInvite>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGuildInviteQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGuildInvite>>> = ({ signal }) => getGuildInvite({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGuildInvite>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGuildInviteQueryResult = NonNullable<Awaited<ReturnType<typeof getGuildInvite>>>
+export type GetGuildInviteQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check the active shared-editing invite without revealing its token
+ */
+
+export function useGetGuildInvite<TData = Awaited<ReturnType<typeof getGuildInvite>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuildInvite>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGuildInviteQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGenerateGuildInviteUrl = () => {
+
+
+
+
+  return `/api/guild/invite`
+}
+
+/**
+ * @summary Replace the active invitation and its sessions
+ */
+export const generateGuildInvite = async ( options?: Parameters<typeof customFetch>[1]): Promise<GuildInviteResponse> => {
+
+  return customFetch<GuildInviteResponse>(getGenerateGuildInviteUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getGenerateGuildInviteMutationKey = () => ['generateGuildInvite'] as const;
+
+export const getGenerateGuildInviteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateGuildInvite>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateGuildInvite>>, TError,void, TContext> => {
+
+const mutationKey = getGenerateGuildInviteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateGuildInvite>>, void> = () => {
+
+
+          return  generateGuildInvite(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateGuildInviteMutationResult = NonNullable<Awaited<ReturnType<typeof generateGuildInvite>>>
+
+    export type GenerateGuildInviteMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Replace the active invitation and its sessions
+ */
+export const useGenerateGuildInvite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateGuildInvite>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateGuildInvite>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getGenerateGuildInviteMutationOptions(options));
+    }
+
+export const getRevokeGuildInviteUrl = () => {
+
+
+
+
+  return `/api/guild/invite`
+}
+
+/**
+ * @summary Revoke the invitation and sessions created through it
+ */
+export const revokeGuildInvite = async ( options?: Parameters<typeof customFetch>[1]): Promise<GuildInviteResponse> => {
+
+  return customFetch<GuildInviteResponse>(getRevokeGuildInviteUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeGuildInviteMutationKey = () => ['revokeGuildInvite'] as const;
+
+export const getRevokeGuildInviteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeGuildInvite>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeGuildInvite>>, TError,void, TContext> => {
+
+const mutationKey = getRevokeGuildInviteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeGuildInvite>>, void> = () => {
+
+
+          return  revokeGuildInvite(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeGuildInviteMutationResult = NonNullable<Awaited<ReturnType<typeof revokeGuildInvite>>>
+
+    export type RevokeGuildInviteMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Revoke the invitation and sessions created through it
+ */
+export const useRevokeGuildInvite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeGuildInvite>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeGuildInvite>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRevokeGuildInviteMutationOptions(options));
+    }
 
 export const getLoginToGuildUrl = () => {
 

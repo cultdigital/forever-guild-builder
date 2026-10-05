@@ -88,7 +88,7 @@ export function createGuildFixture() {
           if (!raw) result = -1;
           else {
             const meta = JSON.parse(raw);
-            if (meta.keyVersion !== Number(argv[0])) result = -2;
+            if (meta.keyVersion !== Number(argv[0]) || (argv[5] && meta.inviteId !== argv[5])) result = -2;
             else {
               Object.assign(meta, JSON.parse(argv[1]), { updatedAt: argv[4] });
               result = JSON.stringify(meta); strings.set(keys[0], result);
@@ -105,6 +105,7 @@ export function createGuildFixture() {
         } else if (script.includes('HEXISTS')) {
           if (!strings.has(keys[0])) result = -1;
           else if (JSON.parse(strings.get(keys[0])).keyVersion !== Number(argv[7])) result = -4;
+          else if (argv[9] && JSON.parse(strings.get(keys[0])).inviteId !== argv[9]) result = -4;
           else if (JSON.parse(strings.get(keys[0])).faction !== argv[8]) result = -5;
           else {
             const members = hash(keys[1]);
