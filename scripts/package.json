@@ -8,6 +8,7 @@
     "test:splits-api": "node ./src/test-splits-api.mjs",
     "test:split-drag": "node --test ./src/test-split-drag.mjs",
     "test:composition": "node --test ./src/test-composition.mjs",
+    "test:raid-setup": "node --test ./src/test-raid-setup.mjs",
     "test:guild-foundation": "node --test ./src/test-guild-foundation.mjs",
     "test:guild-management": "node --test ./src/test-guild-management.mjs",
     "test:guild-limits": "node --test ./src/test-guild-limits.mjs",

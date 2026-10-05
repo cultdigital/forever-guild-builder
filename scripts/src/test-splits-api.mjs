@@ -113,11 +113,14 @@ if (!process.argv[2]) {
     assert.equal((await call('POST', tooFull)).status, 400);
     saved.name = 'Renamed setup';
     saved.teams[0].memberIds = [];
+    saved.teams[0].parties = saved.teams[0].parties.map(() => []);
     saved.teams[1].memberIds = [memberId];
+    saved.teams[1].parties[0] = [memberId];
     assert.equal((await call('POST', saved)).status, 200);
     assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).teams[1].memberIds, [memberId]);
     await store.remove(memberId);
     assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).teams[1].memberIds, []);
+    assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).teams[1].parties.flat(), []);
     assert.deepEqual((await call('GET')).json.setups.find(s => s.id === saved.id).memberRoles, {});
     assert.equal((await call('DELETE', undefined, { id: saved.id })).status, 200);
     assert.equal((await call('POST', saved)).status, 404);

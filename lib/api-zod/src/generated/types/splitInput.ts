@@ -15,6 +15,8 @@ export interface SplitInput {
      * @maxLength 60
      */
   name: string;
+  /** The primary raid in this saved setup. */
+  mainTeamId?: string;
   memberRoles?: SplitMemberRoles;
   /**
      * @minItems 1

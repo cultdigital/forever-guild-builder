@@ -321,6 +321,11 @@ export const getSplitSetupsResponseSetupsItemOneTeamsItemNameMax = 40;
 
 export const getSplitSetupsResponseSetupsItemOneTeamsItemMemberIdsMax = 40;
 
+export const getSplitSetupsResponseSetupsItemOneTeamsItemPartiesItemMax = 5;
+
+export const getSplitSetupsResponseSetupsItemOneTeamsItemPartiesMin = 2;
+export const getSplitSetupsResponseSetupsItemOneTeamsItemPartiesMax = 8;
+
 export const getSplitSetupsResponseSetupsItemOneTeamsMax = 10;
 
 
@@ -329,12 +334,14 @@ export const GetSplitSetupsResponse = zod.object({
   "setups": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneNameMax),
+  "mainTeamId": zod.string().optional().describe('The primary raid in this saved setup.'),
   "memberRoles": zod.record(zod.string(), zod.enum(['tank', 'healer', 'dps'])).optional().describe('Raid-position choices keyed by roster member ID; omitted members use their main roster role.'),
   "teams": zod.array(zod.object({
   "id": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneTeamsItemIdMax),
   "name": zod.string().min(1).max(getSplitSetupsResponseSetupsItemOneTeamsItemNameMax),
   "size": zod.union([zod.literal(10),zod.literal(20),zod.literal(40)]),
-  "memberIds": zod.array(zod.string()).max(getSplitSetupsResponseSetupsItemOneTeamsItemMemberIdsMax)
+  "memberIds": zod.array(zod.string()).max(getSplitSetupsResponseSetupsItemOneTeamsItemMemberIdsMax),
+  "parties": zod.array(zod.array(zod.string()).max(getSplitSetupsResponseSetupsItemOneTeamsItemPartiesItemMax)).min(getSplitSetupsResponseSetupsItemOneTeamsItemPartiesMin).max(getSplitSetupsResponseSetupsItemOneTeamsItemPartiesMax).optional().describe('Five-player party groupings; every assigned raid member appears exactly once.')
 })).min(1).max(getSplitSetupsResponseSetupsItemOneTeamsMax)
 }).and(zod.object({
   "createdAt": zod.string(),
@@ -355,6 +362,11 @@ export const saveSplitSetupBodyTeamsItemNameMax = 40;
 
 export const saveSplitSetupBodyTeamsItemMemberIdsMax = 40;
 
+export const saveSplitSetupBodyTeamsItemPartiesItemMax = 5;
+
+export const saveSplitSetupBodyTeamsItemPartiesMin = 2;
+export const saveSplitSetupBodyTeamsItemPartiesMax = 8;
+
 export const saveSplitSetupBodyTeamsMax = 10;
 
 
@@ -362,12 +374,14 @@ export const saveSplitSetupBodyTeamsMax = 10;
 export const SaveSplitSetupBody = zod.object({
   "id": zod.string().optional(),
   "name": zod.string().min(1).max(saveSplitSetupBodyNameMax),
+  "mainTeamId": zod.string().optional().describe('The primary raid in this saved setup.'),
   "memberRoles": zod.record(zod.string(), zod.enum(['tank', 'healer', 'dps'])).optional().describe('Raid-position choices keyed by roster member ID; omitted members use their main roster role.'),
   "teams": zod.array(zod.object({
   "id": zod.string().min(1).max(saveSplitSetupBodyTeamsItemIdMax),
   "name": zod.string().min(1).max(saveSplitSetupBodyTeamsItemNameMax),
   "size": zod.union([zod.literal(10),zod.literal(20),zod.literal(40)]),
-  "memberIds": zod.array(zod.string()).max(saveSplitSetupBodyTeamsItemMemberIdsMax)
+  "memberIds": zod.array(zod.string()).max(saveSplitSetupBodyTeamsItemMemberIdsMax),
+  "parties": zod.array(zod.array(zod.string()).max(saveSplitSetupBodyTeamsItemPartiesItemMax)).min(saveSplitSetupBodyTeamsItemPartiesMin).max(saveSplitSetupBodyTeamsItemPartiesMax).optional().describe('Five-player party groupings; every assigned raid member appears exactly once.')
 })).min(1).max(saveSplitSetupBodyTeamsMax)
 })
 
@@ -379,6 +393,11 @@ export const saveSplitSetupResponseSetupOneTeamsItemNameMax = 40;
 
 export const saveSplitSetupResponseSetupOneTeamsItemMemberIdsMax = 40;
 
+export const saveSplitSetupResponseSetupOneTeamsItemPartiesItemMax = 5;
+
+export const saveSplitSetupResponseSetupOneTeamsItemPartiesMin = 2;
+export const saveSplitSetupResponseSetupOneTeamsItemPartiesMax = 8;
+
 export const saveSplitSetupResponseSetupOneTeamsMax = 10;
 
 
@@ -387,12 +406,14 @@ export const SaveSplitSetupResponse = zod.object({
   "setup": zod.object({
   "id": zod.string(),
   "name": zod.string().min(1).max(saveSplitSetupResponseSetupOneNameMax),
+  "mainTeamId": zod.string().optional().describe('The primary raid in this saved setup.'),
   "memberRoles": zod.record(zod.string(), zod.enum(['tank', 'healer', 'dps'])).optional().describe('Raid-position choices keyed by roster member ID; omitted members use their main roster role.'),
   "teams": zod.array(zod.object({
   "id": zod.string().min(1).max(saveSplitSetupResponseSetupOneTeamsItemIdMax),
   "name": zod.string().min(1).max(saveSplitSetupResponseSetupOneTeamsItemNameMax),
   "size": zod.union([zod.literal(10),zod.literal(20),zod.literal(40)]),
-  "memberIds": zod.array(zod.string()).max(saveSplitSetupResponseSetupOneTeamsItemMemberIdsMax)
+  "memberIds": zod.array(zod.string()).max(saveSplitSetupResponseSetupOneTeamsItemMemberIdsMax),
+  "parties": zod.array(zod.array(zod.string()).max(saveSplitSetupResponseSetupOneTeamsItemPartiesItemMax)).min(saveSplitSetupResponseSetupOneTeamsItemPartiesMin).max(saveSplitSetupResponseSetupOneTeamsItemPartiesMax).optional().describe('Five-player party groupings; every assigned raid member appears exactly once.')
 })).min(1).max(saveSplitSetupResponseSetupOneTeamsMax)
 }).and(zod.object({
   "createdAt": zod.string(),

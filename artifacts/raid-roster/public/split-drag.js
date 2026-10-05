@@ -1,15 +1,29 @@
 // Validate the whole move before changing either assignment or raid role.
-export function moveSplitMember(draft, memberId, teamId, role, defaultRole) {
+export function moveSplitMember(draft, memberId, teamId, role, defaultRole, partyIndex) {
   const destination = teamId ? draft.teams.find((t) => t.id === teamId) : null;
   if (teamId && !destination) return 'That team no longer exists.';
   if (role !== undefined && !['tank', 'healer', 'dps'].includes(role)) return 'Choose Tank, Healer, or DPS.';
   if (destination && !destination.memberIds.includes(memberId) && destination.memberIds.length >= destination.size) {
     return `${destination.name} is full (${destination.size}).`;
   }
+  const groups = destination ? destination.parties || Array.from({ length: destination.size / 5 }, (_, i) => destination.memberIds.slice(i * 5, i * 5 + 5)) : null;
+  let targetParty;
+  if (destination) {
+    if (partyIndex !== undefined && (!Number.isInteger(partyIndex) || partyIndex < 0 || partyIndex >= groups.length)) return 'That party no longer exists.';
+    targetParty = partyIndex ?? groups.findIndex((g) => g.includes(memberId));
+    if (targetParty < 0) targetParty = groups.findIndex((g) => g.length < 5);
+    if (targetParty < 0 || (!groups[targetParty].includes(memberId) && groups[targetParty].length >= 5)) return `Party ${targetParty + 1} is full (5).`;
+    if (groups[targetParty].includes(memberId) && role === undefined) return '';
+  }
   for (const team of draft.teams) {
     if (team !== destination) team.memberIds = team.memberIds.filter((id) => id !== memberId);
+    if (team.parties) team.parties = team.parties.map((g) => g.filter((id) => id !== memberId));
   }
   if (destination && !destination.memberIds.includes(memberId)) destination.memberIds.push(memberId);
+  if (destination) {
+    destination.parties = groups.map((g) => g.filter((id) => id !== memberId));
+    destination.parties[targetParty].push(memberId);
+  }
   if (role !== undefined) {
     if (role === defaultRole) delete draft.memberRoles[memberId];
     else draft.memberRoles[memberId] = role;
@@ -26,11 +40,12 @@ export function attachSplitDrag({ root, canEdit, canDrop, onMove }) {
     const target = node?.closest?.('[data-sp-drop-team]');
     return target && root.contains(target) ? target : null;
   };
+  const party = (target) => target?.hasAttribute('data-sp-drop-party') ? Number(target.dataset.spDropParty) : undefined;
   function highlight(target) {
     hovered?.classList.remove('sp-drop-over', 'sp-drop-blocked');
     hovered = target;
     if (active && target) {
-      target.classList.add(canDrop(active.id, target.dataset.spDropTeam) ? 'sp-drop-over' : 'sp-drop-blocked');
+      target.classList.add(canDrop(active.id, target.dataset.spDropTeam, party(target)) ? 'sp-drop-over' : 'sp-drop-blocked');
     }
   }
   function cancel() {
@@ -54,8 +69,9 @@ export function attachSplitDrag({ root, canEdit, canDrop, onMove }) {
     const id = active?.id;
     const teamId = target?.dataset.spDropTeam;
     const role = target?.dataset.spDropRole || undefined;
+    const partyIndex = party(target);
     cancel();
-    if (id && target && canEdit()) onMove(id, teamId, role);
+    if (id && target && canEdit()) onMove(id, teamId, role, partyIndex);
   }
   function point(x, y) {
     if (!active) return;
@@ -86,7 +102,7 @@ export function attachSplitDrag({ root, canEdit, canDrop, onMove }) {
     highlight(target);
     if (target) {
       event.preventDefault();
-      event.dataTransfer.dropEffect = canDrop(active.id, target.dataset.spDropTeam) ? 'move' : 'none';
+      event.dataTransfer.dropEffect = canDrop(active.id, target.dataset.spDropTeam, party(target)) ? 'move' : 'none';
     }
   });
   root.addEventListener('dragleave', (event) => {

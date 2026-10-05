@@ -63,6 +63,16 @@ were explicitly deferred; no bot-protection bypass was introduced.
   immediate unsaved role/move updates, scoped flex and alt-only utility coverage,
   matching saved Composition scope, save/reload persistence, preserving expanded
   details during edits, and readable desktop/mobile layouts without overflow.
+- Raid Setup adds single 10/20/40-player raids, five-player parties, and a main
+  raid per saved setup. Eight isolated setup/placement checks pass alongside
+  existing role, composition and guild checks. Local/Redis/missing-storage API
+  adapter suites and workspace typechecking pass. Browser checks passed legacy
+  setup preservation, full-party rejection while the raid still has capacity,
+  desktop party dragging, independent role choices, party/role view switching,
+  resize/reseating, main-raid scope selection, and save/reload persistence.
+  Mobile layout and dropdown moves passed without horizontal overflow; this
+  browser context could not emulate real touch, so party-target touch dragging
+  was not independently verified in this pass.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,

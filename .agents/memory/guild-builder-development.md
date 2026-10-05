@@ -9,13 +9,22 @@ Preserve the completed raid-split feature during the multi-guild conversion.
 
 **How to apply:** Treat splits as part of the existing product when migrating tenancy and verifying the roster, not as deferred scope.
 
-Keep raid splits visibly accessible from Composition, not only a separate tab.
+Keep Raid Setup visibly accessible from Composition, not only a separate tab.
 
 **Why:** The user could not find the feature and requested that it be a function
 within Composition or visibly linked in the app.
 
 **How to apply:** Preserve a clearly labelled Composition entry point and ensure
 navigation does not hide raid-split access on narrow screens.
+
+Raid planning is **Raid Setup**, not only split runs. It must support laying out
+the main raid composition and its party groupings, alongside multi-raid plans.
+
+**Why:** The user said “raid split should be raid setup” so they can set their
+main raid composition and lay out party groupings.
+
+**How to apply:** Preserve the main-raid and party-planning workflow when
+extending this feature; do not reduce it to parallel raids or role columns only.
 
 Use Classic WoW (Vanilla/Forever) nomenclature throughout the app: Tank, Healer,
 and DPS, not Warden, Mender, or Striker.

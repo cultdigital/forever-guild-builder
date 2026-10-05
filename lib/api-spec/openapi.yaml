@@ -464,6 +464,16 @@ components:
           maxItems: 40
           uniqueItems: true
           items: { type: string }
+        parties:
+          type: array
+          minItems: 2
+          maxItems: 8
+          description: Five-player party groupings; every assigned raid member appears exactly once.
+          items:
+            type: array
+            maxItems: 5
+            uniqueItems: true
+            items: { type: string }
     SplitMemberRoles:
       type: object
       maxProperties: 100
@@ -477,6 +487,9 @@ components:
       properties:
         id: { type: string }
         name: { type: string, minLength: 1, maxLength: 60 }
+        mainTeamId:
+          type: string
+          description: The primary raid in this saved setup.
         memberRoles:
           $ref: "#/components/schemas/SplitMemberRoles"
         teams:

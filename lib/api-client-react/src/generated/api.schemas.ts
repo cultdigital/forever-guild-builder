@@ -127,6 +127,13 @@ export interface SplitTeam {
   size: SplitTeamSize;
   /** @maxItems 40 */
   memberIds: string[];
+  /**
+     * Five-player party groupings; every assigned raid member appears exactly once.
+     * @minItems 2
+     * @maxItems 8
+     * @items.maxItems 5
+     */
+  parties?: string[][];
 }
 
 /**
@@ -141,6 +148,8 @@ export interface SplitInput {
      * @maxLength 60
      */
   name: string;
+  /** The primary raid in this saved setup. */
+  mainTeamId?: string;
   memberRoles?: SplitMemberRoles;
   /**
      * @minItems 1
