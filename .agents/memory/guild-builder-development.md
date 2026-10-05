@@ -32,11 +32,15 @@ on-page Saved setups section.
 
 **Why:** The user requested a proper UX cleanup because the app felt busy and
 AI-built, with consistent switches, spacing, and styling across the app.
+They then requested the same UX flavour pass on all pages, not just Build Raid.
 
 **How to apply:** Prioritize one workspace with 10/20/40 size controls and a
 bottom Add new composition action. Preserve old saved records through a discreet
 chooser; collapse secondary analysis rather than showing repeated warning cards.
 Keep keyboard and touch movement usable when removing dropdown alternatives.
+Carry the same hierarchy through Sign Up, Composition, Roster, Settings, and
+guild entry pages. Secondary content can be disclosed on demand, but required
+fields and populated optional data must remain easy to find while editing.
 
 New builds start everyone unassigned; players are assigned by dragging into a
 raid. Multiple compositions can have the same size, including repeated 40s.

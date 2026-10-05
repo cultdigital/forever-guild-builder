@@ -30,7 +30,7 @@
         </div>
 
         <fieldset class="block main-block">
-          <legend><span class="step">1</span> Main — your ideal pick</legend>
+          <legend>Main character</legend>
 
           <div class="label">Class</div>
           <div id="main-class" class="tile-grid classes" role="radiogroup" aria-label="Main class"></div>
@@ -46,22 +46,22 @@
           </div>
         </fieldset>
 
-        <fieldset class="block">
-          <legend><span class="step">2</span> Alternates <span class="muted">— up to 3, best first</span></legend>
-          <p class="hint">Would you swap to fill a gap? Mark how keen you are so officers know who to ask first.</p>
+        <details class="opt" data-opt="alts">
+          <summary>Alternates <span class="muted">optional, up to 3</span></summary>
+          <p class="hint">Would you swap to fill a gap? Rate how keen you are, best first.</p>
           <div id="alts"></div>
-          <button type="button" id="add-alt" class="btn ghost">+ Add an alternate</button>
-        </fieldset>
+          <button type="button" id="add-alt" class="btn ghost small">+ Add an alternate</button>
+        </details>
 
-        <fieldset class="block">
-          <legend><span class="step">3</span> Professions <span class="muted">— optional</span></legend>
+        <details class="opt" data-opt="profs">
+          <summary>Professions <span class="muted">optional</span></summary>
           <div id="form-profs" class="form-profs"></div>
-        </fieldset>
+        </details>
 
-        <fieldset class="block">
-          <legend><span class="step">4</span> Notes <span class="muted">— optional</span></legend>
-          <textarea id="f-notes" maxlength="200" rows="2" placeholder="Raid times, off-spec gear, 'can tank in a pinch'…"></textarea>
-        </fieldset>
+        <details class="opt" data-opt="notes">
+          <summary>Notes <span class="muted">optional</span></summary>
+          <textarea id="f-notes" maxlength="200" rows="2" placeholder="Raid times, off-spec gear, 'can tank in a pinch'…" aria-label="Notes"></textarea>
+        </details>
 
         <div class="form-actions">
           <button type="submit" class="btn primary" id="submit-btn">Sign up</button>
@@ -77,7 +77,7 @@
       <div class="panel comp-splits-entry">
         <div>
           <h2>Build Raid</h2>
-          <p class="muted">Seat players into parties of five. A saved composition is analysed here; use Members to switch raids.</p>
+          <p class="muted">Seat players, then scope the checks below to a composition.</p>
         </div>
         <a href="#splits" class="btn primary" id="manage-raid-splits">Open Build Raid</a>
       </div>
@@ -91,6 +91,11 @@
 
       <div class="role-cards" id="role-cards"></div>
 
+      <div class="panel">
+        <h2>Gaps &amp; pressure points</h2>
+        <ul id="insights" class="insights"></ul>
+      </div>
+
       <div class="panel raid-panel">
         <div class="panel-head">
           <h2>Tank assignments</h2>
@@ -99,20 +104,14 @@
         <div id="tank-frames" class="frames"></div>
       </div>
 
-      <div class="panel">
-        <h2>Role split</h2>
+      <details class="panel comp-more" id="comp-more-roles"><summary>Role split</summary>
         <div id="role-bar" class="stack-bar"></div>
         <div id="role-legend" class="legend"></div>
-      </div>
+      </details>
 
-      <div class="panel">
-        <h2>Gaps &amp; pressure points</h2>
-        <ul id="insights" class="insights"></ul>
-      </div>
-
-      <div class="panel">
+      <details class="panel comp-more" id="comp-more-classes"><summary>Class &amp; spec makeup</summary>
         <div class="panel-head">
-          <h2>Class &amp; spec makeup</h2>
+          <span></span>
           <div class="legend small">
             <span><i class="pip main"></i>Main</span>
             <span><i class="pip keen"></i>Keen alt</span>
@@ -121,23 +120,17 @@
           </div>
         </div>
         <div id="class-grid" class="class-grid"></div>
-      </div>
+      </details>
 
-      <div class="two-col">
-        <div class="panel">
-          <h2>Raid utility</h2>
-          <ul id="utility" class="utility"></ul>
-        </div>
-        <div class="panel">
-          <h2>Races</h2>
-          <div id="races" class="race-bars"></div>
-        </div>
-      </div>
-    
-      <div class="panel">
-        <h2>Professions</h2>
+      <details class="panel comp-more" id="comp-more-util"><summary>Raid utility</summary>
+        <ul id="utility" class="utility"></ul>
+      </details>
+      <details class="panel comp-more" id="comp-more-races"><summary>Races</summary>
+        <div id="races" class="race-bars"></div>
+      </details>
+      <details class="panel comp-more" id="comp-more-profs"><summary>Professions</summary>
         <div id="professions" class="prof-grid"></div>
-      </div>
+      </details>
     </section>
 
     <!-- ROSTER -->
@@ -145,9 +138,11 @@
       <div class="panel roster-panel">
         <div class="roster-toolbar">
           <input id="search" type="search" placeholder="Search names…" aria-label="Search names">
-          <div class="seg" id="role-filter"></div>
-          <div id="class-filter" class="class-filter"></div>
-          <button class="btn ghost small" id="export-csv" type="button">Export CSV</button>
+          <div class="seg" id="role-filter" role="radiogroup" aria-label="Filter roster by role"></div>
+          <details class="roster-more" id="roster-more"><summary>Class filter &amp; export</summary>
+            <div id="class-filter" class="class-filter"></div>
+            <button class="btn ghost small" id="export-csv" type="button">Export CSV</button>
+          </details>
         </div>
         <div id="raid-frames"></div>
         <p id="roster-empty" class="empty" hidden>No one matches those filters.</p>

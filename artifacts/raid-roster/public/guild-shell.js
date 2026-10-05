@@ -232,8 +232,7 @@ function creationPanel(cfg) {
 
 async function home() {
   const p = panel('World of Warcraft: Forever', 'Forever Guild Builder');
-  p.append(el('p', null, 'A private raid-frame roster for your guild. Each guild has its own slug and a four-word guild key. Share the key only with members you trust.'));
-  p.append(el('p', 'muted', 'Open your guild with the invite URL you were given, or type its slug.'));
+  p.append(el('p', null, 'A private raid roster for your guild. Open it with your invite link or guild slug, then enter the four-word key.'));
   const form = el('form');
   const input = field(form, 'slug', 'Invite URL or guild slug', { required: true, maxLength: 300, placeholder: 'your-guild' });
   const fmsg = msgLine();
@@ -250,8 +249,10 @@ async function home() {
   try {
     const cfg = await api('/api/config');
     if (!cfg.storageConfigured || !cfg.sessionsConfigured) status.append(notice('Storage setup is unavailable. Guilds cannot be opened until storage and sessions are configured.', true));
-    root.append(creationPanel(cfg));
-    root.append(demoPanel());
+    const more = el('details', 'shell-det shell-more');
+    more.append(el('summary', null, 'Found a new guild or preview the roster'));
+    more.append(creationPanel(cfg), demoPanel());
+    root.append(more);
   } catch (e) {
     status.append(notice('Could not read server configuration: ' + e.message, true));
   }
@@ -316,7 +317,7 @@ function settingsSection(guild) {
   const keyField = (f, id) => field(f, id, 'Current guild key', { type: 'password', required: true });
 
   // details
-  const d = card('Guild details', 'Rename the guild or change its faction. Colours preview immediately; save to apply the change.');
+  const d = card('Guild details', null);
   const df = el('form');
   const nm = field(df, 's-name', 'Guild name', { value: guild.name, required: true, minLength: 2, maxLength: 24 });
   df.append(el('span', 'label', 'Faction'));
@@ -335,7 +336,7 @@ function settingsSection(guild) {
     if (String(guild.faction).toLowerCase() === v) fac.value = v;
     seg.append(b);
   });
-  df.append(seg, notice('Changing faction may invalidate characters whose race belongs to the other faction. Affected entries are listed after saving.'));
+  df.append(seg, el('p', 'hint', 'Faction colours preview now; Save applies them. Characters with a race from the other faction are listed after saving.'));
   const ds = btn('Save changes', 'primary', null, 'submit');
   const dm = msgLine();
   const out = el('div');
@@ -372,9 +373,9 @@ function settingsSection(guild) {
 
   // invite
   const knownKey = enteredGuildKey?.guildId === guild.id ? enteredGuildKey.key : '';
-  const iv = card('Invite link', knownKey
-    ? 'Your sign-in key is filled in for this page session only. Show it or copy the invite link; it is not saved in browser storage.'
-    : 'Enter the current guild key to show it or build an invite link. The server stores only a hash and cannot retrieve the original key.');
+  const iv = card('Invite access', knownKey
+    ? 'Key filled in for this page session only; never saved in browser storage.'
+    : 'Enter the current guild key to show it or copy an invite link. The server keeps only a hash and cannot recover it.');
   const ifm = el('form');
   const ik = field(ifm, 's-ikey', 'Current guild key', { type: 'password', required: true, value: knownKey, placeholder: 'Enter your guild key' });
   const ib = btn('Copy invite link', null, null, 'submit');
@@ -395,11 +396,14 @@ function settingsSection(guild) {
   iv.append(ifm);
 
   // export
-  const ex = card('Export', 'Download the roster as a CSV file.');
+  const ex = card('Export roster', 'Download the roster as CSV.');
   ex.append(btn('Export CSV', null, () => { const o = document.getElementById('export-csv'); if (o) o.click(); }));
 
   // rotate
-  const ro = card('Rotate guild key', 'Creates a new four-word guild key. Every session, including yours, is signed out. Confirm with the current key or the recovery code.');
+  const adv = el('details', 'shell-det danger-det');
+  adv.append(el('summary', null, 'Credentials and deletion'));
+  wrap.append(adv);
+  const ro = card('Rotate guild key', 'Creates a new key and signs out every session, including yours. Confirm with the current key or recovery code.');
   const rf = el('form');
   const rk = field(rf, 's-rkey', 'Current guild key', { type: 'password' });
   const rr = field(rf, 's-rrec', 'or recovery code', {});
@@ -428,6 +432,7 @@ function settingsSection(guild) {
   // delete
   const de = card('Delete guild', null);
   de.classList.add('danger-zone');
+  adv.append(ro, de);
   de.append(notice('This permanently deletes the guild and every roster entry. It cannot be undone.', true));
   const dform = el('form');
   const dk = keyField(dform, 's-dkey');

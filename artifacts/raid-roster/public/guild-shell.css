@@ -44,3 +44,31 @@ form .key-input-row .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; }
 .shell-root .demo .frames { grid-template-columns: 1fr; }
 .shell-foot { flex-wrap: wrap; align-items: center; }
 .shell-foot a { color: var(--gold); }
+
+/* Unified UX pass: landing, login, recovery, settings */
+.shell-root { padding: 32px 16px 16px; display: grid; gap: 16px; }
+.shell-root .panel, .shell-settings .panel { padding: 24px; margin: 0; box-shadow: none; background: var(--panel); }
+.shell-root .panel + .panel { margin-top: 0; }
+.shell-settings { display: grid; gap: 16px; }
+.shell-settings .panel { margin-bottom: 0; }
+.shell-root h1 { font-size: clamp(26px, 6vw, 36px); margin-bottom: 8px; }
+.shell-root p { margin-bottom: 12px; }
+.shell-root form, .shell-settings form { gap: 8px; }
+.shell-root .btn, .shell-settings .btn { margin-top: 12px; min-height: 40px; }
+.key-input-row { gap: 8px; }
+.key-input-row .btn, form .key-input-row .btn { min-height: 40px; }
+.shell-notice { padding: 12px 16px; margin: 16px 0; }
+.shell-det { margin-top: 24px; padding-top: 12px; }
+.shell-det summary { min-height: 36px; display: flex; align-items: center; }
+.cred { padding: 12px 16px; margin: 16px 0; }
+.danger-zone { border-color: #6d2420; background: var(--panel); }
+.shell-bar { padding: 8px 16px 0; align-items: center; }
+.shell-bar .btn { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+.shell-root .demo { opacity: .85; }
+.shell-skel { height: 96px; }
+@media (max-width: 680px) { .shell-root { padding: 16px 12px; } .shell-root .panel, .shell-settings .panel { padding: 16px; } }
+.shell-more > summary, .danger-det > summary { font: 700 15px/1 var(--head); letter-spacing: .04em; color: var(--gold-2); min-height: 40px; }
+.shell-more { border-top: 1px solid var(--line-soft); }
+.shell-more[open] > .panel { margin-top: 16px; }
+.danger-det { border-top-color: #6d2420; }
+.danger-det[open] > .panel { margin-top: 16px; }

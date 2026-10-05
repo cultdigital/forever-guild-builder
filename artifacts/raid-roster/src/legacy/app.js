@@ -358,6 +358,9 @@ function renderRoster() {
     .map(([k, l]) => `<button type="button" aria-checked="${filters.role === k}" role="radio" data-role="${k}">${l}</button>`).join('');
   $('#class-filter').innerHTML = Object.entries(CLASSES).map(([c, def]) =>
     `<button type="button" class="cf ${filters.cls === c ? 'on' : ''}" data-cls="${c}" style="--c:${def.color}" aria-pressed="${filters.cls === c}" data-tip="${def.label}">${icon(`classicon_${c}`, 'sm', def.label)}</button>`).join('');
+  const filterSummary = $('#roster-more > summary');
+  if (filterSummary) filterSummary.textContent = filters.cls
+    ? `More filters & export · ${CLASSES[filters.cls].label}` : 'More filters & export';
 
   const q = filters.q.toLowerCase();
   const rows = members.filter((m) => {
@@ -486,6 +489,7 @@ function toggleProf(list, key) {
   return [...list, key];
 }
 
+let renderedForm = null;
 function renderForm() {
   const f = form;
   $('#f-name').value = f.name;
@@ -527,6 +531,12 @@ function renderForm() {
     </div>`).join('');
   $('#add-alt').hidden = f.alts.length >= MAX_ALTS;
   $('#form-profs').innerHTML = profTiles(f.professions, 'data-form-prof');
+  const newForm = renderedForm !== f;
+  for (const [key, populated] of [['alts', f.alts.length > 0], ['profs', f.professions.length > 0], ['notes', Boolean(f.notes.trim())]]) {
+    const section = document.querySelector(`details[data-opt="${key}"]`);
+    if (section && (populated || newForm)) section.open = populated;
+  }
+  renderedForm = f;
   nameHint();
 }
 
