@@ -3,3 +3,4 @@
 - [OpenAPI request components](openapi-request-components.md) — named input components avoid duplicate request-body exports in this Orval setup.
 - [Redis Lua JSON](redis-lua-json.md) — preserve serialized records; Lua cjson can turn empty arrays into objects, unlike JavaScript transport fixtures.
 - [Secrets confirmation](secrets-confirmation.md) — “added or confirmed” verifies presence, not that values changed or the connection works.
+- [Production entry naming](production-entry-names.md) — publishing validation can reject dev-labelled entry filenames even for production-compatible Node servers.

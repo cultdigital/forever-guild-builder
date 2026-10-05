@@ -15,7 +15,7 @@ localPort = 25471
 run = "pnpm --filter @workspace/raid-roster run dev"
 
 [services.production.run]
-args = [ "node", "dev-server.js" ]
+args = [ "node", "server.js" ]
 
 [services.production.run.env]
 PORT = "25471"

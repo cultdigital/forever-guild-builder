@@ -13,7 +13,7 @@ paths = ["/api"]
 run = "pnpm --filter @workspace/api-server run dev"
 
 [services.production.run]
-args = ["node", "dev-server.js"]
+args = ["node", "server.js"]
 
 [services.production.run.env]
 PORT = "8080"

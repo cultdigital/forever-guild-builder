@@ -13,7 +13,7 @@ Private Horde/Alliance guild rosters, composition planning and named raid split 
 
 ## Structure
 
-- `dev-server.js`: Node HTTP entry point, static assets and guild APIs; no framework or application build required.
+- `server.js`: Node HTTP entry point, static assets and guild APIs; no framework or application build required.
 - `artifacts/raid-roster`: vanilla shell around the preserved imported HTML, CSS, icons and imperative roster interactions.
 - `artifacts/api-server`: managed `/api` service using the same Node entry point.
 - `lib/roster`: shared character definitions, imported roster validation, survey seed, and storage.
