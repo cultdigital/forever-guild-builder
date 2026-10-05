@@ -28,6 +28,24 @@
   --guild-green: #40ff40;
 }
 
+:root[data-faction="alliance"] {
+  --bg: #080d16;
+  --panel: #101c2c;
+  --panel-2: #16263a;
+  --line: #35485e;
+  --line-soft: #26374c;
+  --red: #174783;
+  --red-2: #2868aa;
+  --text: #e3eaf3;
+  --muted: #a7b5c8;
+}
+:root[data-faction="alliance"] body {
+  background-image:
+    radial-gradient(ellipse 90% 50% at 50% -5%, rgba(30, 79, 148, .45), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(35, 82, 151, .12), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, .012) 0 2px, transparent 2px 6px);
+}
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {

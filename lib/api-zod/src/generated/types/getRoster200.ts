@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GetRoster200Storage } from './getRoster200Storage';
+import type { PublicGuild } from './publicGuild';
 import type { RosterMember } from './rosterMember';
 
 export type GetRoster200 = {
   members: RosterMember[];
   storage: GetRoster200Storage;
+  guild?: PublicGuild;
 };

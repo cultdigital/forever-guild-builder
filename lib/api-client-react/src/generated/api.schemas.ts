@@ -5,6 +5,104 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type CreateGuildInputFaction = typeof CreateGuildInputFaction[keyof typeof CreateGuildInputFaction];
+
+
+export const CreateGuildInputFaction = {
+  horde: 'horde',
+  alliance: 'alliance',
+} as const;
+
+export interface CreateGuildInput {
+  /**
+     * @minLength 2
+     * @maxLength 24
+     */
+  name: string;
+  faction: CreateGuildInputFaction;
+  /** @maxLength 2048 */
+  turnstileToken: string;
+}
+
+export interface GuildCredentialInput {
+  /** @maxLength 200 */
+  key?: string;
+  /** @maxLength 200 */
+  recoveryCode?: string;
+}
+
+export interface GuildRecoveryInput {
+  slug: string;
+  /** @maxLength 200 */
+  recoveryCode: string;
+}
+
+export interface GuildDeleteInput {
+  /** @maxLength 200 */
+  key: string;
+  confirmation: string;
+}
+
+export type GuildSettingsInputFaction = typeof GuildSettingsInputFaction[keyof typeof GuildSettingsInputFaction];
+
+
+export const GuildSettingsInputFaction = {
+  horde: 'horde',
+  alliance: 'alliance',
+} as const;
+
+export interface GuildSettingsInput {
+  /**
+     * @minLength 2
+     * @maxLength 24
+     */
+  name?: string;
+  faction?: GuildSettingsInputFaction;
+  donationDismissed?: boolean;
+}
+
+export type PublicGuildFaction = typeof PublicGuildFaction[keyof typeof PublicGuildFaction];
+
+
+export const PublicGuildFaction = {
+  horde: 'horde',
+  alliance: 'alliance',
+} as const;
+
+export interface PublicGuild {
+  id: string;
+  name: string;
+  slug: string;
+  faction: PublicGuildFaction;
+  donationDismissed: boolean;
+}
+
+export interface GuildCredentialsResponse {
+  guild: PublicGuild;
+  key: string;
+  recoveryCode?: string;
+}
+
+export type GuildSettingsResponseInvalidRacesItem = {
+  name: string;
+  race: string;
+};
+
+export interface GuildSettingsResponse {
+  guild: PublicGuild;
+  invalidRaces: GuildSettingsResponseInvalidRacesItem[];
+}
+
+export interface GuildLoginInput {
+  slug: string;
+  /** @maxLength 200 */
+  key: string;
+}
+
+export interface GuildResponse {
+  guild: PublicGuild;
+}
+
 export type SplitTeamSize = typeof SplitTeamSize[keyof typeof SplitTeamSize];
 
 
@@ -86,6 +184,14 @@ export interface HealthStatus {
   status: string;
 }
 
+export type GetGuildConfiguration200 = {
+  storageConfigured: boolean;
+  sessionsConfigured: boolean;
+  creationEnabled: boolean;
+  /** @nullable */
+  turnstileSiteKey: string | null;
+};
+
 export type GetRoster200Storage = typeof GetRoster200Storage[keyof typeof GetRoster200Storage];
 
 
@@ -98,6 +204,7 @@ export const GetRoster200Storage = {
 export type GetRoster200 = {
   members: RosterMember[];
   storage: GetRoster200Storage;
+  guild?: PublicGuild;
 };
 
 export type SaveRosterMember200 = {

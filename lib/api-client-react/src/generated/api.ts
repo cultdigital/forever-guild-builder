@@ -20,12 +20,22 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CreateGuildInput,
   DeleteRosterMember200,
   DeleteRosterMemberParams,
   DeleteSplitSetup200,
   DeleteSplitSetupParams,
+  GetGuildConfiguration200,
   GetRoster200,
   GetSplitSetups200,
+  GuildCredentialInput,
+  GuildCredentialsResponse,
+  GuildDeleteInput,
+  GuildLoginInput,
+  GuildRecoveryInput,
+  GuildResponse,
+  GuildSettingsInput,
+  GuildSettingsResponse,
   HealthStatus,
   RosterInput,
   SaveRosterMember200,
@@ -59,6 +69,762 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getCreatePrivateGuildUrl = () => {
+
+
+
+
+  return `/api/guilds`
+}
+
+/**
+ * @summary Turnstile-verified creation with one-time guild credentials
+ */
+export const createPrivateGuild = async (createGuildInput: CreateGuildInput, options?: Parameters<typeof customFetch>[1]): Promise<GuildCredentialsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GuildCredentialsResponse>(getCreatePrivateGuildUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createGuildInput)
+  }
+);}
+
+
+
+
+
+export const getCreatePrivateGuildMutationKey = () => ['createPrivateGuild'] as const;
+
+export const getCreatePrivateGuildMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPrivateGuild>>, TError,CreatePrivateGuildMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPrivateGuild>>, TError,CreatePrivateGuildMutationVariables, TContext> => {
+
+const mutationKey = getCreatePrivateGuildMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPrivateGuild>>, CreatePrivateGuildMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPrivateGuild(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePrivateGuildMutationResult = NonNullable<Awaited<ReturnType<typeof createPrivateGuild>>>
+    export type CreatePrivateGuildMutationBody = BodyType<CreateGuildInput>
+    export type CreatePrivateGuildMutationError = ErrorType<void>
+    export type CreatePrivateGuildMutationVariables = {data: BodyType<CreateGuildInput>}
+
+    /**
+ * @summary Turnstile-verified creation with one-time guild credentials
+ */
+export const useCreatePrivateGuild = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPrivateGuild>>, TError,CreatePrivateGuildMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPrivateGuild>>,
+        TError,
+        CreatePrivateGuildMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreatePrivateGuildMutationOptions(options));
+    }
+
+export const getRotatePrivateGuildKeyUrl = () => {
+
+
+
+
+  return `/api/guild/rotate`
+}
+
+/**
+ * @summary Authenticated key rotation with current key or recovery code
+ */
+export const rotatePrivateGuildKey = async (guildCredentialInput: GuildCredentialInput, options?: Parameters<typeof customFetch>[1]): Promise<GuildCredentialsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GuildCredentialsResponse>(getRotatePrivateGuildKeyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(guildCredentialInput)
+  }
+);}
+
+
+
+
+
+export const getRotatePrivateGuildKeyMutationKey = () => ['rotatePrivateGuildKey'] as const;
+
+export const getRotatePrivateGuildKeyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotatePrivateGuildKey>>, TError,RotatePrivateGuildKeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rotatePrivateGuildKey>>, TError,RotatePrivateGuildKeyMutationVariables, TContext> => {
+
+const mutationKey = getRotatePrivateGuildKeyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rotatePrivateGuildKey>>, RotatePrivateGuildKeyMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  rotatePrivateGuildKey(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RotatePrivateGuildKeyMutationResult = NonNullable<Awaited<ReturnType<typeof rotatePrivateGuildKey>>>
+    export type RotatePrivateGuildKeyMutationBody = BodyType<GuildCredentialInput>
+    export type RotatePrivateGuildKeyMutationError = ErrorType<void>
+    export type RotatePrivateGuildKeyMutationVariables = {data: BodyType<GuildCredentialInput>}
+
+    /**
+ * @summary Authenticated key rotation with current key or recovery code
+ */
+export const useRotatePrivateGuildKey = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotatePrivateGuildKey>>, TError,RotatePrivateGuildKeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rotatePrivateGuildKey>>,
+        TError,
+        RotatePrivateGuildKeyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRotatePrivateGuildKeyMutationOptions(options));
+    }
+
+export const getRecoverPrivateGuildKeyUrl = () => {
+
+
+
+
+  return `/api/guild/recover`
+}
+
+/**
+ * @summary Recover a lost key using a private slug and recovery code
+ */
+export const recoverPrivateGuildKey = async (guildRecoveryInput: GuildRecoveryInput, options?: Parameters<typeof customFetch>[1]): Promise<GuildCredentialsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GuildCredentialsResponse>(getRecoverPrivateGuildKeyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(guildRecoveryInput)
+  }
+);}
+
+
+
+
+
+export const getRecoverPrivateGuildKeyMutationKey = () => ['recoverPrivateGuildKey'] as const;
+
+export const getRecoverPrivateGuildKeyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recoverPrivateGuildKey>>, TError,RecoverPrivateGuildKeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recoverPrivateGuildKey>>, TError,RecoverPrivateGuildKeyMutationVariables, TContext> => {
+
+const mutationKey = getRecoverPrivateGuildKeyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recoverPrivateGuildKey>>, RecoverPrivateGuildKeyMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recoverPrivateGuildKey(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecoverPrivateGuildKeyMutationResult = NonNullable<Awaited<ReturnType<typeof recoverPrivateGuildKey>>>
+    export type RecoverPrivateGuildKeyMutationBody = BodyType<GuildRecoveryInput>
+    export type RecoverPrivateGuildKeyMutationError = ErrorType<void>
+    export type RecoverPrivateGuildKeyMutationVariables = {data: BodyType<GuildRecoveryInput>}
+
+    /**
+ * @summary Recover a lost key using a private slug and recovery code
+ */
+export const useRecoverPrivateGuildKey = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recoverPrivateGuildKey>>, TError,RecoverPrivateGuildKeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recoverPrivateGuildKey>>,
+        TError,
+        RecoverPrivateGuildKeyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecoverPrivateGuildKeyMutationOptions(options));
+    }
+
+export const getGetGuildConfigurationUrl = () => {
+
+
+
+
+  return `/api/config`
+}
+
+/**
+ * @summary Public setup availability without secret values
+ */
+export const getGuildConfiguration = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetGuildConfiguration200> => {
+
+  return customFetch<GetGuildConfiguration200>(getGetGuildConfigurationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGuildConfigurationQueryKey = () => {
+    return [
+    `/api/config`
+    ] as const;
+    }
+
+
+export const getGetGuildConfigurationQueryOptions = <TData = Awaited<ReturnType<typeof getGuildConfiguration>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuildConfiguration>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGuildConfigurationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGuildConfiguration>>> = ({ signal }) => getGuildConfiguration({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGuildConfiguration>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGuildConfigurationQueryResult = NonNullable<Awaited<ReturnType<typeof getGuildConfiguration>>>
+export type GetGuildConfigurationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public setup availability without secret values
+ */
+
+export function useGetGuildConfiguration<TData = Awaited<ReturnType<typeof getGuildConfiguration>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuildConfiguration>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGuildConfigurationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLoginToGuildUrl = () => {
+
+
+
+
+  return `/api/session`
+}
+
+/**
+ * @summary Exchange a private guild slug and key for a signed session cookie
+ */
+export const loginToGuild = async (guildLoginInput: GuildLoginInput, options?: Parameters<typeof customFetch>[1]): Promise<GuildResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GuildResponse>(getLoginToGuildUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(guildLoginInput)
+  }
+);}
+
+
+
+
+
+export const getLoginToGuildMutationKey = () => ['loginToGuild'] as const;
+
+export const getLoginToGuildMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loginToGuild>>, TError,LoginToGuildMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof loginToGuild>>, TError,LoginToGuildMutationVariables, TContext> => {
+
+const mutationKey = getLoginToGuildMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof loginToGuild>>, LoginToGuildMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  loginToGuild(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LoginToGuildMutationResult = NonNullable<Awaited<ReturnType<typeof loginToGuild>>>
+    export type LoginToGuildMutationBody = BodyType<GuildLoginInput>
+    export type LoginToGuildMutationError = ErrorType<void>
+    export type LoginToGuildMutationVariables = {data: BodyType<GuildLoginInput>}
+
+    /**
+ * @summary Exchange a private guild slug and key for a signed session cookie
+ */
+export const useLoginToGuild = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loginToGuild>>, TError,LoginToGuildMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof loginToGuild>>,
+        TError,
+        LoginToGuildMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLoginToGuildMutationOptions(options));
+    }
+
+export const getLogoutFromGuildUrl = () => {
+
+
+
+
+  return `/api/session`
+}
+
+/**
+ * @summary Clear the guild session cookie
+ */
+export const logoutFromGuild = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getLogoutFromGuildUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutFromGuildMutationKey = () => ['logoutFromGuild'] as const;
+
+export const getLogoutFromGuildMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutFromGuild>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutFromGuild>>, TError,void, TContext> => {
+
+const mutationKey = getLogoutFromGuildMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutFromGuild>>, void> = () => {
+
+
+          return  logoutFromGuild(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutFromGuildMutationResult = NonNullable<Awaited<ReturnType<typeof logoutFromGuild>>>
+
+    export type LogoutFromGuildMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Clear the guild session cookie
+ */
+export const useLogoutFromGuild = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutFromGuild>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logoutFromGuild>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogoutFromGuildMutationOptions(options));
+    }
+
+export const getUpdatePrivateGuildSettingsUrl = () => {
+
+
+
+
+  return `/api/guild`
+}
+
+/**
+ * @summary Change only allowed settings of the session-bound guild
+ */
+export const updatePrivateGuildSettings = async (guildSettingsInput: GuildSettingsInput, options?: Parameters<typeof customFetch>[1]): Promise<GuildSettingsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GuildSettingsResponse>(getUpdatePrivateGuildSettingsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(guildSettingsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdatePrivateGuildSettingsMutationKey = () => ['updatePrivateGuildSettings'] as const;
+
+export const getUpdatePrivateGuildSettingsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePrivateGuildSettings>>, TError,UpdatePrivateGuildSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePrivateGuildSettings>>, TError,UpdatePrivateGuildSettingsMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePrivateGuildSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePrivateGuildSettings>>, UpdatePrivateGuildSettingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePrivateGuildSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePrivateGuildSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updatePrivateGuildSettings>>>
+    export type UpdatePrivateGuildSettingsMutationBody = BodyType<GuildSettingsInput>
+    export type UpdatePrivateGuildSettingsMutationError = ErrorType<void>
+    export type UpdatePrivateGuildSettingsMutationVariables = {data: BodyType<GuildSettingsInput>}
+
+    /**
+ * @summary Change only allowed settings of the session-bound guild
+ */
+export const useUpdatePrivateGuildSettings = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePrivateGuildSettings>>, TError,UpdatePrivateGuildSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePrivateGuildSettings>>,
+        TError,
+        UpdatePrivateGuildSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePrivateGuildSettingsMutationOptions(options));
+    }
+
+export const getDeletePrivateGuildUrl = () => {
+
+
+
+
+  return `/api/guild`
+}
+
+/**
+ * @summary Delete the session-bound guild with key and exact-name confirmation
+ */
+export const deletePrivateGuild = async (guildDeleteInput: GuildDeleteInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getDeletePrivateGuildUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(guildDeleteInput)
+  }
+);}
+
+
+
+
+
+export const getDeletePrivateGuildMutationKey = () => ['deletePrivateGuild'] as const;
+
+export const getDeletePrivateGuildMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePrivateGuild>>, TError,DeletePrivateGuildMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePrivateGuild>>, TError,DeletePrivateGuildMutationVariables, TContext> => {
+
+const mutationKey = getDeletePrivateGuildMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePrivateGuild>>, DeletePrivateGuildMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  deletePrivateGuild(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePrivateGuildMutationResult = NonNullable<Awaited<ReturnType<typeof deletePrivateGuild>>>
+    export type DeletePrivateGuildMutationBody = BodyType<GuildDeleteInput>
+    export type DeletePrivateGuildMutationError = ErrorType<void>
+    export type DeletePrivateGuildMutationVariables = {data: BodyType<GuildDeleteInput>}
+
+    /**
+ * @summary Delete the session-bound guild with key and exact-name confirmation
+ */
+export const useDeletePrivateGuild = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePrivateGuild>>, TError,DeletePrivateGuildMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePrivateGuild>>,
+        TError,
+        DeletePrivateGuildMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeletePrivateGuildMutationOptions(options));
+    }
+
+export const getGetCurrentGuildUrl = () => {
+
+
+
+
+  return `/api/guild`
+}
+
+/**
+ * @summary Public metadata for the guild bound to the verified session
+ */
+export const getCurrentGuild = async ( options?: Parameters<typeof customFetch>[1]): Promise<GuildResponse> => {
+
+  return customFetch<GuildResponse>(getGetCurrentGuildUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCurrentGuildQueryKey = () => {
+    return [
+    `/api/guild`
+    ] as const;
+    }
+
+
+export const getGetCurrentGuildQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentGuild>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentGuild>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentGuildQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentGuild>>> = ({ signal }) => getCurrentGuild({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentGuild>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCurrentGuildQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentGuild>>>
+export type GetCurrentGuildQueryError = ErrorType<void>
+
+
+/**
+ * @summary Public metadata for the guild bound to the verified session
+ */
+
+export function useGetCurrentGuild<TData = Awaited<ReturnType<typeof getCurrentGuild>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentGuild>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCurrentGuildQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetRosterUrl = () => {
 

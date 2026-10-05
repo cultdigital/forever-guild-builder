@@ -11,6 +11,172 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /guilds:
+    post:
+      operationId: createPrivateGuild
+      summary: Turnstile-verified creation with one-time guild credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGuildInput"
+      responses:
+        "201":
+          description: Guild and one-time credentials with an authenticated cookie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildCredentialsResponse"
+        "400":
+          description: Invalid guild or bot verification
+        "429":
+          description: Creation limit reached
+        "503":
+          description: Setup missing, bot verification unavailable or capacity reached
+  /guild/rotate:
+    post:
+      operationId: rotatePrivateGuildKey
+      summary: Authenticated key rotation with current key or recovery code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuildCredentialInput"
+      responses:
+        "200":
+          description: New key shown once; all old sessions revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildCredentialsResponse"
+        "401":
+          description: Missing session or incorrect credential
+        "429":
+          description: Too many attempts
+  /guild/recover:
+    post:
+      operationId: recoverPrivateGuildKey
+      summary: Recover a lost key using a private slug and recovery code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuildRecoveryInput"
+      responses:
+        "200":
+          description: New key shown once and a replacement session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildCredentialsResponse"
+        "401":
+          description: Incorrect guild or recovery code
+        "429":
+          description: Too many attempts
+  /config:
+    get:
+      operationId: getGuildConfiguration
+      summary: Public setup availability without secret values
+      responses:
+        "200":
+          description: Setup availability
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [storageConfigured, sessionsConfigured, creationEnabled, turnstileSiteKey]
+                properties:
+                  storageConfigured:
+                    type: boolean
+                  sessionsConfigured:
+                    type: boolean
+                  creationEnabled:
+                    type: boolean
+                  turnstileSiteKey:
+                    type: [string, "null"]
+  /session:
+    post:
+      operationId: loginToGuild
+      summary: Exchange a private guild slug and key for a signed session cookie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuildLoginInput"
+      responses:
+        "200":
+          description: Signed in with a secure HttpOnly cookie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildResponse"
+        "401":
+          description: Incorrect guild URL or key
+        "429":
+          description: Too many attempts
+        "503":
+          description: Storage or sessions are not configured
+    delete:
+      operationId: logoutFromGuild
+      summary: Clear the guild session cookie
+      responses:
+        "200":
+          description: Signed out
+  /guild:
+    patch:
+      operationId: updatePrivateGuildSettings
+      summary: Change only allowed settings of the session-bound guild
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuildSettingsInput"
+      responses:
+        "200":
+          description: Saved settings and any faction-invalid characters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildSettingsResponse"
+        "400":
+          description: Invalid settings
+        "401":
+          description: Missing or revoked session
+    delete:
+      operationId: deletePrivateGuild
+      summary: Delete the session-bound guild with key and exact-name confirmation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuildDeleteInput"
+      responses:
+        "200":
+          description: Guild removed and session cleared
+        "400":
+          description: Typed name does not match
+        "401":
+          description: Missing session or incorrect key
+    get:
+      operationId: getCurrentGuild
+      summary: Public metadata for the guild bound to the verified session
+      responses:
+        "200":
+          description: Current guild
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildResponse"
+        "401":
+          description: Missing, expired or revoked session
+        "503":
+          description: Storage or sessions are unavailable
   /roster:
     get:
       operationId: getRoster
@@ -31,6 +197,8 @@ paths:
                   storage:
                     type: string
                     enum: [local, redis, missing]
+                  guild:
+                    $ref: "#/components/schemas/PublicGuild"
     post:
       operationId: saveRosterMember
       summary: Sign up or partially edit a member when id is supplied
@@ -171,6 +339,115 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    CreateGuildInput:
+      type: object
+      required: [name, faction, turnstileToken]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 24
+        faction:
+          type: string
+          enum: [horde, alliance]
+        turnstileToken:
+          type: string
+          maxLength: 2048
+    GuildCredentialInput:
+      type: object
+      properties:
+        key:
+          type: string
+          maxLength: 200
+        recoveryCode:
+          type: string
+          maxLength: 200
+    GuildRecoveryInput:
+      type: object
+      required: [slug, recoveryCode]
+      properties:
+        slug:
+          type: string
+        recoveryCode:
+          type: string
+          maxLength: 200
+    GuildDeleteInput:
+      type: object
+      required: [key, confirmation]
+      properties:
+        key:
+          type: string
+          maxLength: 200
+        confirmation:
+          type: string
+    GuildSettingsInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 24
+        faction:
+          type: string
+          enum: [horde, alliance]
+        donationDismissed:
+          type: boolean
+    GuildCredentialsResponse:
+      type: object
+      required: [guild, key]
+      properties:
+        guild:
+          $ref: "#/components/schemas/PublicGuild"
+        key:
+          type: string
+        recoveryCode:
+          type: string
+    GuildSettingsResponse:
+      type: object
+      required: [guild, invalidRaces]
+      properties:
+        guild:
+          $ref: "#/components/schemas/PublicGuild"
+        invalidRaces:
+          type: array
+          items:
+            type: object
+            required: [name, race]
+            properties:
+              name:
+                type: string
+              race:
+                type: string
+    GuildLoginInput:
+      type: object
+      required: [slug, key]
+      properties:
+        slug:
+          type: string
+        key:
+          type: string
+          maxLength: 200
+    PublicGuild:
+      type: object
+      required: [id, name, slug, faction, donationDismissed]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        faction:
+          type: string
+          enum: [horde, alliance]
+        donationDismissed:
+          type: boolean
+    GuildResponse:
+      type: object
+      required: [guild]
+      properties:
+        guild:
+          $ref: "#/components/schemas/PublicGuild"
     SplitTeam:
       type: object
       required: [id, name, size, memberIds]

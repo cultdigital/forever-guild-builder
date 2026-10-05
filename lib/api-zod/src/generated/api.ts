@@ -9,6 +9,185 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Turnstile-verified creation with one-time guild credentials
+ */
+export const createPrivateGuildBodyNameMin = 2;
+export const createPrivateGuildBodyNameMax = 24;
+
+export const createPrivateGuildBodyTurnstileTokenMax = 2048;
+
+
+
+export const CreatePrivateGuildBody = zod.object({
+  "name": zod.string().min(createPrivateGuildBodyNameMin).max(createPrivateGuildBodyNameMax),
+  "faction": zod.enum(['horde', 'alliance']),
+  "turnstileToken": zod.string().max(createPrivateGuildBodyTurnstileTokenMax)
+})
+
+export const CreatePrivateGuildResponse = zod.object({
+  "guild": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "faction": zod.enum(['horde', 'alliance']),
+  "donationDismissed": zod.boolean()
+}),
+  "key": zod.string(),
+  "recoveryCode": zod.string().optional()
+})
+
+
+/**
+ * @summary Authenticated key rotation with current key or recovery code
+ */
+export const rotatePrivateGuildKeyBodyKeyMax = 200;
+
+export const rotatePrivateGuildKeyBodyRecoveryCodeMax = 200;
+
+
+
+export const RotatePrivateGuildKeyBody = zod.object({
+  "key": zod.string().max(rotatePrivateGuildKeyBodyKeyMax).optional(),
+  "recoveryCode": zod.string().max(rotatePrivateGuildKeyBodyRecoveryCodeMax).optional()
+})
+
+export const RotatePrivateGuildKeyResponse = zod.object({
+  "guild": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "faction": zod.enum(['horde', 'alliance']),
+  "donationDismissed": zod.boolean()
+}),
+  "key": zod.string(),
+  "recoveryCode": zod.string().optional()
+})
+
+
+/**
+ * @summary Recover a lost key using a private slug and recovery code
+ */
+export const recoverPrivateGuildKeyBodyRecoveryCodeMax = 200;
+
+
+
+export const RecoverPrivateGuildKeyBody = zod.object({
+  "slug": zod.string(),
+  "recoveryCode": zod.string().max(recoverPrivateGuildKeyBodyRecoveryCodeMax)
+})
+
+export const RecoverPrivateGuildKeyResponse = zod.object({
+  "guild": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "faction": zod.enum(['horde', 'alliance']),
+  "donationDismissed": zod.boolean()
+}),
+  "key": zod.string(),
+  "recoveryCode": zod.string().optional()
+})
+
+
+/**
+ * @summary Public setup availability without secret values
+ */
+export const GetGuildConfigurationResponse = zod.object({
+  "storageConfigured": zod.boolean(),
+  "sessionsConfigured": zod.boolean(),
+  "creationEnabled": zod.boolean(),
+  "turnstileSiteKey": zod.string().nullable()
+})
+
+
+/**
+ * @summary Exchange a private guild slug and key for a signed session cookie
+ */
+export const loginToGuildBodyKeyMax = 200;
+
+
+
+export const LoginToGuildBody = zod.object({
+  "slug": zod.string(),
+  "key": zod.string().max(loginToGuildBodyKeyMax)
+})
+
+export const LoginToGuildResponse = zod.object({
+  "guild": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "faction": zod.enum(['horde', 'alliance']),
+  "donationDismissed": zod.boolean()
+})
+})
+
+
+/**
+ * @summary Clear the guild session cookie
+ */
+export const LogoutFromGuildResponse = zod.unknown()
+
+
+/**
+ * @summary Change only allowed settings of the session-bound guild
+ */
+export const updatePrivateGuildSettingsBodyNameMin = 2;
+export const updatePrivateGuildSettingsBodyNameMax = 24;
+
+
+
+export const UpdatePrivateGuildSettingsBody = zod.object({
+  "name": zod.string().min(updatePrivateGuildSettingsBodyNameMin).max(updatePrivateGuildSettingsBodyNameMax).optional(),
+  "faction": zod.enum(['horde', 'alliance']).optional(),
+  "donationDismissed": zod.boolean().optional()
+})
+
+export const UpdatePrivateGuildSettingsResponse = zod.object({
+  "guild": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "faction": zod.enum(['horde', 'alliance']),
+  "donationDismissed": zod.boolean()
+}),
+  "invalidRaces": zod.array(zod.object({
+  "name": zod.string(),
+  "race": zod.string()
+}))
+})
+
+
+/**
+ * @summary Delete the session-bound guild with key and exact-name confirmation
+ */
+export const deletePrivateGuildBodyKeyMax = 200;
+
+
+
+export const DeletePrivateGuildBody = zod.object({
+  "key": zod.string().max(deletePrivateGuildBodyKeyMax),
+  "confirmation": zod.string()
+})
+
+export const DeletePrivateGuildResponse = zod.unknown()
+
+
+/**
+ * @summary Public metadata for the guild bound to the verified session
+ */
+export const GetCurrentGuildResponse = zod.object({
+  "guild": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "faction": zod.enum(['horde', 'alliance']),
+  "donationDismissed": zod.boolean()
+})
+})
+
+
+/**
  * @summary Read the guild roster
  */
 export const getRosterResponseMembersItemOneAltsMax = 3;
@@ -40,7 +219,14 @@ export const GetRosterResponse = zod.object({
   "createdAt": zod.string().optional(),
   "updatedAt": zod.string().optional()
 }))),
-  "storage": zod.enum(['local', 'redis', 'missing'])
+  "storage": zod.enum(['local', 'redis', 'missing']),
+  "guild": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "faction": zod.enum(['horde', 'alliance']),
+  "donationDismissed": zod.boolean()
+}).optional()
 })
 
 

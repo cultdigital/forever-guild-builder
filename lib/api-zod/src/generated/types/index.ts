@@ -6,15 +6,30 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './createGuildInput';
+export * from './createGuildInputFaction';
 export * from './deleteRosterMember200';
 export * from './deleteRosterMemberParams';
 export * from './deleteSplitSetup200';
 export * from './deleteSplitSetupParams';
+export * from './getGuildConfiguration200';
 export * from './getRoster200';
 export * from './getRoster200Storage';
 export * from './getSplitSetups200';
 export * from './getSplitSetups200Storage';
+export * from './guildCredentialInput';
+export * from './guildCredentialsResponse';
+export * from './guildDeleteInput';
+export * from './guildLoginInput';
+export * from './guildRecoveryInput';
+export * from './guildResponse';
+export * from './guildSettingsInput';
+export * from './guildSettingsInputFaction';
+export * from './guildSettingsResponse';
+export * from './guildSettingsResponseInvalidRacesItem';
 export * from './healthStatus';
+export * from './publicGuild';
+export * from './publicGuildFaction';
 export * from './rosterCharacter';
 export * from './rosterInput';
 export * from './rosterMember';

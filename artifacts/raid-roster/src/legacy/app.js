@@ -1,10 +1,15 @@
 import {
-  GUILD_NAME, ROLES, RACES, CLASSES, PURE_DPS, WILLINGNESS, RAID_SIZES, MAX_ALTS, ASSIGNMENTS, PROFESSIONS, MAX_PRIMARY_PROFS,
-  getSpec, roleOf, iconUrl,
-} from '@workspace/roster/data';
+  ROLES, PURE_DPS, WILLINGNESS, RAID_SIZES, MAX_ALTS, ASSIGNMENTS, PROFESSIONS, MAX_PRIMARY_PROFS,
+  getSpec, roleOf, iconUrl, getFactionData, RACES as HORDE_RACES, ALLIANCE_RACES,
+} from './data.js';
 import { createSplits } from './split-controls.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
+const GUILD_NAME = window.guildContext?.name || 'Guild';
+const FACTION = window.guildContext?.faction || 'horde';
+const { classes: CLASSES, races: RACES } = getFactionData(FACTION);
+document.documentElement.dataset.faction = FACTION;
+$('.banner .eyebrow').textContent = `World of Warcraft: Forever · ${FACTION === 'alliance' ? 'Alliance' : 'Horde'}`;
 const ROLE_ORDER = ['tank', 'healer', 'dps'];
 const UTILITY_ICON = {
   warrior: 'ability_warrior_battleshout', paladin: 'spell_magic_greaterblessingofkings',
@@ -60,16 +65,25 @@ async function api(method, { body, query = '', path = '' } = {}) {
 }
 
 async function load() {
+  if (window.guildCredentialDisplay) return;
   closePop();
   try {
     const data = await api('GET');
+    if (window.guildCredentialDisplay) return;
     members = data.members;
+    if (data.guild && data.guild.id !== window.guildContext?.id) {
+      location.reload();
+      return;
+    }
+    if (data.guild) window.guildContext = data.guild;
     $('#storage-note').textContent = { local: 'Local preview — data saved on this machine only.', missing: 'Read-only: storage not connected yet. Showing survey data.' }[data.storage] || '';
   } catch (e) {
+    if (e.status === 401) { if (!window.guildCredentialDisplay) location.reload(); return; }
     $('#headline-stats').textContent = `Couldn't reach the roster: ${e.message}`;
     return;
   }
   renderAll();
+  document.dispatchEvent(new CustomEvent('guild-roster-loaded', { detail: { count: members.length, guild: window.guildContext } }));
   splits.load();
 }
 
@@ -312,7 +326,7 @@ const plateSort = (a, b) => asgIdx(a) - asgIdx(b) || CLASS_ORDER.indexOf(a.main.
 
 function plate(m) {
   const r = roleOf(m.main.class, m.main.spec);
-  const race = RACES[m.main.race];
+  const race = RACES[m.main.race] || HORDE_RACES[m.main.race] || ALLIANCE_RACES[m.main.race];
   const asg = ASSIGNMENTS[m.assignment];
   const spec = getSpec(m.main.class, m.main.spec);
   const alts = m.alts.map((a, i) => `<span class="alt-chip w-${a.will}" data-tip="${esc(`Alt ${i + 1}: ${specLabel(a)} — ${WILLINGNESS[a.will].long}`)}">${charIcons(a, 'xs')}<span>${esc(getSpec(a.class, a.spec)?.label || CLASSES[a.class].label)}</span></span>`).join('');
@@ -417,7 +431,7 @@ function renderPop() {
 
 function closePop() {
   pop = null;
-  $('#editpop').hidden = true;
+  if ($('#editpop')) $('#editpop').hidden = true;
 }
 
 async function patch(id, changes) {
@@ -431,7 +445,7 @@ async function patch(id, changes) {
     toast(`Saved ${member.name} — composition updated`);
   } catch (err) {
     toast(err.message, true);
-    if (err.status === 404) load();
+    if (err.status === 404 || err.status === 409) load();
   }
 }
 
@@ -498,7 +512,7 @@ function renderForm() {
   if (f.main.class) {
     $('#main-spec').innerHTML = specTiles(f.main.class, f.main.spec, 'data-main-spec');
     const allowed = CLASSES[f.main.class].races;
-    $('#race-note').textContent = allowed.length === 1 ? `— Horde ${CLASSES[f.main.class].label}s must be ${RACES[allowed[0]].label}` : '';
+    $('#race-note').textContent = allowed.length === 1 ? `— ${FACTION === 'alliance' ? 'Alliance' : 'Horde'} ${CLASSES[f.main.class].label}s must be ${RACES[allowed[0]].label}` : '';
     $('#main-race').innerHTML = Object.entries(RACES).map(([r, def]) => {
       const ok = allowed.includes(r);
       return `<button type="button" role="radio" class="tile race-tile" data-main-race="${r}" aria-checked="${f.main.race === r}" ${ok ? '' : `disabled data-tip="${esc(`${CLASSES[f.main.class].label} isn't available to ${def.label}`)}"`}>
@@ -572,7 +586,7 @@ async function submit(e) {
     const wasEdit = Boolean(form.editingId);
     form.editingId = member.id;
     await load();
-    setMsg(wasEdit ? `Saved — ${member.name} updated.` : `Lok'tar! ${member.name} is on the roster.`, 'success');
+    setMsg(wasEdit ? `Saved — ${member.name} updated.` : `${member.name} is on the roster.`, 'success');
   } catch (err) {
     setMsg(err.message, 'error');
     if (err.status === 404) { form = blankForm(); load(); }
@@ -611,7 +625,7 @@ function exportCsv() {
   const blob = new Blob([[head.join(','), ...lines].join('\n')], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'horde-roster.csv';
+  a.download = `${window.guildContext?.slug || FACTION}-roster.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -619,7 +633,7 @@ function exportCsv() {
 // ---------- tabs ----------
 function showTab() {
   let tab = location.hash.slice(1);
-  if (!['signup', 'comp', 'roster', 'splits'].includes(tab)) tab = 'signup';
+  if (!['signup', 'comp', 'roster', 'splits', 'settings'].includes(tab)) tab = 'signup';
   for (const p of document.querySelectorAll('.tab-panel')) p.hidden = p.id !== `tab-${tab}`;
   for (const a of document.querySelectorAll('.tabs a')) a.setAttribute('aria-selected', a.dataset.tab === tab);
 }

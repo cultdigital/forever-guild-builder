@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forever Guild Builder - Private guild rosters for WoW: Forever</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="description" content="A private, key-protected raid-frame roster for your World of Warcraft: Forever guild.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700;800&family=Cinzel:wght@400;700;900&family=Marcellus&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/guild-shell.css">
+</head>
+<body>
+<div id="shell-bar" class="shell-bar" hidden>
+  <a class="btn ghost small" href="/" id="home-link">Home</a>
+  <button class="btn danger small" type="button" id="logout-btn">Log out</button>
+  <span id="shell-bar-msg" class="form-msg error" role="alert"></span>
+</div>
+<div id="shell-root" class="shell-root" aria-live="polite"></div>
+<div id="roster-root"></div>
+<footer class="shell-foot">
+  <a href="https://ko-fi.com/cultdigital" target="_blank" rel="noopener noreferrer">Support Forever Guild Builder</a>
+  <a href="/privacy">Privacy</a>
+  <span>Not affiliated with Blizzard Entertainment.</span>
+</footer>
+<script type="module" src="/guild-shell.js"></script>
+</body>
+</html>

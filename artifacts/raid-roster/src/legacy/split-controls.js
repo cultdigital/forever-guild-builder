@@ -3,7 +3,7 @@ const MAX_ROSTER = 100;
 const MAX_TEAMS = 10;
 const SIZES = [10, 20, 40];
 const PRESETS = ['2x10', '2x20', '5x20', '10x10', '2x40'];
-const SCOPE_KEY = 'raid-roster-scope';
+const SCOPE_KEY = `raid-roster-scope:${window.guildContext?.id || 'legacy'}`;
 const $ = (s) => document.querySelector(s);
 
 export function createSplits({ getMembers, api, toast, esc, nameChip, onScopeChange }) {

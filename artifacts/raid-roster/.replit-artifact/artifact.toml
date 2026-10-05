@@ -1,7 +1,7 @@
 kind = "web"
 previewPath = "/"
-title = "Good Job · Raid Roster"
-description = "A World of Warcraft: Forever Horde guild roster for choosing mains and alternates, reviewing raid composition, and managing member assignments."
+title = "Forever Guild Builder"
+description = "Private, shared-key World of Warcraft: Forever guild rosters and raid split planning."
 version = "1.0.0"
 id = "artifacts/raid-roster"
 router = "path"
@@ -14,14 +14,12 @@ localPort = 25471
 [services.development]
 run = "pnpm --filter @workspace/raid-roster run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/raid-roster", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/raid-roster/dist/public"
+[services.production.run]
+args = [ "node", "dev-server.js" ]
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.run.env]
+PORT = "25471"
+NODE_ENV = "production"
 
 [services.env]
 PORT = "25471"

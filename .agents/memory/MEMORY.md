@@ -1,1 +1,4 @@
 - [Browser testing fallback](browser-testing.md) — if the testing subagent kind is unavailable, use workspace Playwright rather than skipping interaction checks.
+- [Guild Builder scope](guild-builder-development.md) — completed splits remain in scope; older multi-guild plan wording saying splits are paused is superseded.
+- [OpenAPI request components](openapi-request-components.md) — named input components avoid duplicate request-body exports in this Orval setup.
+- [Redis Lua JSON](redis-lua-json.md) — preserve serialized records; Lua cjson can turn empty arrays into objects, unlike JavaScript transport fixtures.
