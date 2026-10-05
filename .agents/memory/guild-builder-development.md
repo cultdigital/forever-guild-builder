@@ -49,6 +49,15 @@ Alliance theme.
 **How to apply:** Keep identity and faction presentation tied to current guild
 metadata, including after changes; do not leave Horde branding on Alliance guilds.
 
+Settings faction choices preview the corresponding colours and crest immediately,
+but only Save changes persists the faction. Outside Settings, use the saved theme.
+
+**Why:** The user requested appropriate colours when switching faction in Settings;
+previewing should not silently change guild character eligibility.
+
+**How to apply:** Keep preview state separate from saved guild identity. Preserve
+the preview during Settings refreshes, and use the server's faction after saving.
+
 Use the WoW: Forever logo as the app favicon.
 
 **Why:** The user explicitly requested the game logo instead of the generic icon.

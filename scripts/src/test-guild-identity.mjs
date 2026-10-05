@@ -42,3 +42,27 @@ test('faction selection themes screens even before guild markup mounts', (t) => 
   applyGuildIdentity({ name: 'Guild', faction: 'horde' });
   assert.equal(root.dataset.faction, 'horde');
 });
+
+test('settings faction previews survive refresh but do not change the saved guild', (t) => {
+  const { elements, root } = dom(t);
+  const previousLocation = globalThis.location;
+  globalThis.location = { hash: '#settings' };
+  t.after(() => { if (previousLocation === undefined) delete globalThis.location; else globalThis.location = previousLocation; });
+  const guild = { name: 'Test Guild', faction: 'alliance' };
+  root.dataset.factionPreview = 'horde';
+  applyGuildIdentity(guild);
+  assert.equal(root.dataset.faction, 'horde');
+  assert.equal(elements.crest.alt, 'Horde crest');
+  assert.equal(guild.faction, 'alliance');
+  applyGuildIdentity(guild);
+  assert.equal(root.dataset.faction, 'horde');
+  globalThis.location.hash = '#roster';
+  applyGuildIdentity(guild);
+  assert.equal(root.dataset.faction, 'alliance');
+  globalThis.location.hash = '#settings';
+  applyGuildIdentity(guild);
+  assert.equal(root.dataset.faction, 'horde');
+  delete root.dataset.factionPreview;
+  applyGuildIdentity(guild);
+  assert.equal(root.dataset.faction, 'alliance');
+});

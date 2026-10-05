@@ -3,8 +3,11 @@ export function applyFactionTheme(faction) {
 }
 
 export function applyGuildIdentity(guild) {
-  applyFactionTheme(guild?.faction);
-  const alliance = guild?.faction === 'alliance';
+  const preview = globalThis.location?.hash === '#settings'
+    ? document.documentElement.dataset.factionPreview : null;
+  const faction = preview || guild?.faction;
+  applyFactionTheme(faction);
+  const alliance = faction === 'alliance';
   const name = document.getElementById('guild-name');
   if (name) name.textContent = `<${guild?.name || 'Guild'}>`;
   const label = document.querySelector('.banner .eyebrow');

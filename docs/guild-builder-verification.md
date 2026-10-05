@@ -7,7 +7,7 @@ were explicitly deferred; no bot-protection bypass was introduced.
 
 ## Completed checks
 
-- 43 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
+- 44 isolated Node checks cover tenant-bound repositories, hostile guild IDs,
   credential hashing, session signing/revocation, creation and login throttling,
   write/read limits, capacity, settings, rotation, recovery, deletion, faction
   validation, expiry, stale-write rejection and idempotent migration.
@@ -28,6 +28,11 @@ were explicitly deferred; no bot-protection bypass was introduced.
   races, name/faction updates on refresh, and creation-screen faction previews
   with isolated browser fixtures. Real Good Job login still loads 21 members and
   a header matching its actual metadata; no real guild faction or data was changed.
+- Settings faction selection previews matching colours and crest immediately.
+  Workspace Playwright checked desktop/mobile, refresh and tab navigation,
+  rejected saves, saved-faction rendering with invalid-race warnings, and
+  persistence after reload. Save checks used isolated browser fixtures; the
+  real test-guild preview left its stored metadata unchanged.
 - These tests simulate the Redis REST boundary. They do **not** validate Lua
   execution against a real Redis server or Cloudflare's live verification.
 - Existing split API regressions pass for their original isolated local,

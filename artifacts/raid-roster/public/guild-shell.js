@@ -301,7 +301,7 @@ function settingsSection(guild) {
   const keyField = (f, id) => field(f, id, 'Current guild key', { type: 'password', required: true });
 
   // details
-  const d = card('Guild details', 'Rename the guild or change its faction.');
+  const d = card('Guild details', 'Rename the guild or change its faction. Colours preview immediately; save to apply the change.');
   const df = el('form');
   const nm = field(df, 's-name', 'Guild name', { value: guild.name, required: true, minLength: 2, maxLength: 24 });
   df.append(el('span', 'label', 'Faction'));
@@ -309,7 +309,12 @@ function settingsSection(guild) {
   const seg = el('div', 'seg');
   seg.setAttribute('role', 'radiogroup');
   [['horde', 'Horde'], ['alliance', 'Alliance']].forEach(([v, t]) => {
-    const b = btn(t, null, () => { fac.value = v; seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b))); });
+    const b = btn(t, null, () => {
+      fac.value = v;
+      document.documentElement.dataset.factionPreview = v;
+      applyGuildIdentity(window.guildContext || guild);
+      seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+    });
     b.setAttribute('role', 'radio');
     b.setAttribute('aria-checked', String(String(guild.faction).toLowerCase() === v));
     if (String(guild.faction).toLowerCase() === v) fac.value = v;
@@ -324,6 +329,9 @@ function settingsSection(guild) {
     e.preventDefault();
     run(ds, dm, async () => {
       const r = await send('PATCH', '/api/guild', { name: nm.value.trim(), faction: fac.value });
+      window.guildContext = r.guild;
+      delete document.documentElement.dataset.factionPreview;
+      applyGuildIdentity(r.guild);
       const bad = r.invalidRaces || [];
       const done = () => { guardOn = false; location.reload(); };
       if (!bad.length) return done();
@@ -432,6 +440,7 @@ async function roster(guild) {
   rosterRoot.innerHTML = await res.text(); // trusted first-party markup
   window.guildContext = guild;
   applyGuildIdentity(guild);
+  window.addEventListener('hashchange', () => applyGuildIdentity(window.guildContext));
   addSettingsTab(guild);
   root.replaceChildren();
   bar.hidden = false;
