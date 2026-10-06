@@ -460,7 +460,7 @@ function toast(msg, isError = false) {
 // ---------- sign-up form ----------
 function classTiles(selected, attr, mini = false) {
   return Object.entries(CLASSES).map(([c, def]) => {
-    const note = def.races.length === 1 ? `<small>${RACES[def.races[0]].label} only</small>` : '';
+    const note = c !== 'paladin' && def.races.length === 1 ? `<small>${RACES[def.races[0]].label} only</small>` : '';
     return `<button type="button" role="radio" class="tile class-tile ${mini ? 'mini' : ''}" ${attr}="${c}" aria-checked="${selected === c}" style="--c:${def.color}" ${mini ? `data-tip="${def.label}"` : ''}>
       ${icon(`classicon_${c}`, mini ? 'sm' : 'md', def.label)}${mini ? '' : `<span>${def.label}</span>${note}`}</button>`;
   }).join('');
