@@ -536,7 +536,7 @@ function renderForm() {
   const newForm = renderedForm !== f;
   for (const [key, populated] of [['alts', f.alts.length > 0], ['profs', f.professions.length > 0], ['notes', Boolean(f.notes.trim())]]) {
     const section = document.querySelector(`details[data-opt="${key}"]`);
-    if (section && (populated || newForm)) section.open = populated;
+    if (section && (populated || newForm)) section.open = true;
   }
   renderedForm = f;
   $('#signup-form').querySelectorAll('input, textarea, #add-alt').forEach((input) => { input.disabled = viewOnly; });

@@ -42,6 +42,15 @@ Carry the same hierarchy through Sign Up, Composition, Roster, Settings, and
 guild entry pages. Secondary content can be disclosed on demand, but required
 fields and populated optional data must remain easy to find while editing.
 
+Sign Up's optional sections should open by default, while still allowing manual
+collapse. Do not add a Build Raid promotional banner to Composition.
+
+**Why:** The user requested removing that banner and opening the Sign Up
+dropdowns so people are less likely to miss them and more likely to fill them out.
+
+**How to apply:** Keep optional fields visible when opening a new or edited sign-up
+form; retain Build Raid access through its navigation tab.
+
 New builds start everyone unassigned; players are assigned by dragging into a
 raid. Multiple compositions can have the same size, including repeated 40s.
 

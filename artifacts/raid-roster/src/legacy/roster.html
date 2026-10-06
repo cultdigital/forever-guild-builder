@@ -46,19 +46,19 @@
           </div>
         </fieldset>
 
-        <details class="opt" data-opt="alts">
+        <details class="opt" data-opt="alts" open>
           <summary>Alternates <span class="muted">optional, up to 3</span></summary>
           <p class="hint">Would you swap to fill a gap? Rate how keen you are, best first.</p>
           <div id="alts"></div>
           <button type="button" id="add-alt" class="btn ghost small">+ Add an alternate</button>
         </details>
 
-        <details class="opt" data-opt="profs">
+        <details class="opt" data-opt="profs" open>
           <summary>Professions <span class="muted">optional</span></summary>
           <div id="form-profs" class="form-profs"></div>
         </details>
 
-        <details class="opt" data-opt="notes">
+        <details class="opt" data-opt="notes" open>
           <summary>Notes <span class="muted">optional</span></summary>
           <textarea id="f-notes" maxlength="200" rows="2" placeholder="Raid times, off-spec gear, 'can tank in a pinch'…" aria-label="Notes"></textarea>
         </details>
@@ -74,13 +74,6 @@
 
     <!-- COMPOSITION -->
     <section id="tab-comp" class="tab-panel" hidden>
-      <div class="panel comp-splits-entry">
-        <div>
-          <h2>Build Raid</h2>
-          <p class="muted">Seat players, then scope the checks below to a composition.</p>
-        </div>
-        <a href="#splits" class="btn primary" id="manage-raid-splits">Open Build Raid</a>
-      </div>
       <div class="comp-toolbar">
         <span class="label inline">Plan for</span>
         <div class="seg" id="raid-size" role="radiogroup" aria-label="Raid size"></div>
